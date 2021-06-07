@@ -8,9 +8,11 @@ int main(){
 	{
 		auto names =
 		linker.NOTYFY({ { L"Event", L"On_ShioriEcho.GetName" } }).to_map();
-		wcout << "terminal login\n"
-			  << "ghost: " << names[L"GhostName"] << '\n'
-			  << "User: " << names[L"UserName"] << '\n';
+		wcout << "terminal login\n";
+		if(names.has(L"GhostName"))
+			wcout << "ghost: " << names[L"GhostName"] << '\n';
+		if(names.has(L"UserName"))
+			wcout << "User: " << names[L"UserName"] << '\n';
 	}
 	{
 		wstring commad;
@@ -22,18 +24,20 @@ int main(){
 						  });
 			do{
 				Result=linker.NOTYFY({ { L"Event", L"On_ShioriEcho.GetResult" } }).to_map();
-				if(Result.has(L"Special"))
+				if(Result.has(L"Special")){
 					wcout << Result[L"Special"] << endl;
-				else if(Result.has(L"Result")){
+					break;
+				}else if(Result.has(L"Result")){
 					wcout << Result[L"Result"] << endl;
 					if(Result.has(L"Type"))
 						wcout << L"Type: " << Result[L"Type"] << endl;
+					break;
 				}
 				else{
-					Sleep(1);
+					Sleep(1000);
 					continue;
 				}
-			}while(0);
+			}while(1);
 			wcout << ">> ";
 		}
 	}

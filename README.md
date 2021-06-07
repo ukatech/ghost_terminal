@@ -3,3 +3,4 @@
 需求：  
 支持`On_ShioriEcho.GetName`、`On_ShioriEcho`、`On_ShioriEcho.GetResult`的人格  
 如[Taromati2]( https://github.com/Taromati2/Taromati2 )  
+Ps：`On_ShioriEcho.End`可选  
