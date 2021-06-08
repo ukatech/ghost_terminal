@@ -7,7 +7,7 @@ int main(){
 	SSTP_link_t linker;
 	{
 		auto names =
-		linker.NOTYFY({ { L"Event", L"On_ShioriEcho.GetName" } }).to_map();
+		linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } }).to_map();
 		wcout << "terminal login\n";
 		if(names.has(L"GhostName"))
 			wcout << "ghost: " << names[L"GhostName"] << '\n';
@@ -19,11 +19,11 @@ int main(){
 		SSTP_link_args_t Result={};
 		wcout << ">> ";
 		while (wcin >> commad && commad != L"exit") {
-			linker.NOTYFY({ { L"Event", L"On_ShioriEcho" },
+			linker.NOTYFY({ { L"Event", L"ShioriEcho" },
 							{ L"Reference0", commad }
 						  });
 			do{
-				Result=linker.NOTYFY({ { L"Event", L"On_ShioriEcho.GetResult" } }).to_map();
+				Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } }).to_map();
 				if(Result.has(L"Special")){
 					wcout << Result[L"Special"] << endl;
 					break;
@@ -42,6 +42,6 @@ int main(){
 		}
 	}
 	{
-		linker.NOTYFY({ { L"Event", L"On_ShioriEcho.End" } });
+		linker.NOTYFY({ { L"Event", L"ShioriEcho.End" } });
 	}
 }
