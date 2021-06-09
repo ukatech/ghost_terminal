@@ -3,7 +3,7 @@
 int main(){
 	using namespace SSTP_link_n;
 	using namespace std;
-	SSTP_link_t linker;
+	SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
 	if(linker.Has_Event(L"ShioriEcho.GetName")){
 		auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
 		wcout << "terminal login\n";
@@ -14,7 +14,7 @@ int main(){
 	}
 	{
 		wstring commad;
-		SSTP_link_args_t Result={};
+		SSTP_ret_t Result;
 		wcout << ">> ";
 		while (wcin >> commad && commad != L"exit") {
 			if(!linker.Has_Event(L"ShioriEcho"))
