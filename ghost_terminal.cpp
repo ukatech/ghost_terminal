@@ -4,7 +4,7 @@ int main(){
 	using namespace SSTP_link_n;
 	using namespace std;
 	SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
-	if(linker.Has_Event(L"ShioriEcho.GetName")){
+	{
 		auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
 		wcout << "terminal login\n";
 		if(names.has(L"GhostName"))
@@ -22,10 +22,12 @@ int main(){
 			linker.NOTYFY({ { L"Event", L"ShioriEcho" },
 							{ L"Reference0", commad }
 						  });
-			if(linker.Has_Event(L"ShioriEcho.GetResult")){
+			{
 				do{
 					Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
-					if(Result.has(L"Special")){
+					if(Result.get_code()==400)//Bad Request
+						wcout << "Event ShioriEcho.GetResult Not define.\n";
+					else if(Result.has(L"Special")){
 						wcout << Result[L"Special"] << endl;
 						break;
 					}else if(Result.has(L"Result")){
@@ -40,8 +42,6 @@ int main(){
 					}
 				}while(1);
 			}
-			else
-				wcout << "Event Has_Event or ShioriEcho.GetResult Not define.\n";
 			wcout << ">> ";
 		}
 	}
