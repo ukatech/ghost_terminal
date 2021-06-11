@@ -22,6 +22,25 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
     终端所收集到的命令  
   * 返值  
     **忽略**  
+  * 示例  
+	```
+	// request
+	GET SHIORI/3.0
+	Charset: UTF-8
+	Sender: Ghost Terminal
+	SenderType: external,sstp
+	SecurityLevel: local
+	Status: balloon(0=0)
+	ID: ShioriEcho
+	Reference0: 1000-7
+
+
+	// response (Execution time : 0[ms])
+	SHIORI/3.0 200 OK
+	Sender: AYA
+	Charset: UTF-8
+	Value: \0\s[0]表达式『\_q1000-7\_q』的执行结果为：\n\_q993\n类型：整数\_q\n\q[◇复制结果,OnCopy,"993"]\n\q[◇复制表达式,OnCopy,"1000-7"]\n\q[◇结果作Sakura Script執行,OnSakuraScript,"993"]\n\n\q[◇求值下一个,OnCalculateVar]\n\q[◇无用,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
+	```
 - `ShioriEcho.GetResult`  
   查询求值结果事件  
   * 可能返值1  
@@ -29,9 +48,48 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
       显示内容并进入下一行内容的获取  
     - `X-SSTP-PassThru-Type`（可选）  
       补充信息：值类型  
+	- 示例  
+	  ```
+	  // request
+	  GET SHIORI/3.0
+	  Charset: UTF-8
+	  Sender: Ghost Terminal
+	  SenderType: external,sstp
+	  SecurityLevel: local
+	  Status: talking,balloon(0=0)
+	  ID: ShioriEcho.GetResult
+
+
+	  // response (Execution time : 0[ms])
+	  SHIORI/3.0 200 OK
+	  Sender: AYA
+	  Charset: UTF-8
+	  Value: 
+	  X-SSTP-PassThru-Result: 993
+	  X-SSTP-PassThru-Type: 整数
+	  ```
   * 可能返值2  
     - `X-SSTP-PassThru-Special`  
       显示内容并进入下一行内容的获取  
+	- 示例  
+	  ```
+	  // request
+	  GET SHIORI/3.0
+	  Charset: UTF-8
+	  Sender: Ghost Terminal
+	  SenderType: external,sstp
+	  SecurityLevel: local
+	  Status: balloon(0=0)
+	  ID: ShioriEcho.GetResult
+
+
+	  // response (Execution time : 0[ms])
+	  SHIORI/3.0 200 OK
+	  Sender: AYA
+	  Charset: UTF-8
+	  Value: 
+	  X-SSTP-PassThru-Special: 已取消求值
+	  ```
   * 可能返值3  
     - 空  
       等待1秒后重新发起`ShioriEcho.GetResult`  
@@ -42,6 +100,26 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
       显示人格名  
     - `X-SSTP-PassThru-UserName`（可选）  
       显示用户名  
+  * 示例  
+	```
+	// request
+	GET SHIORI/3.0
+	Charset: UTF-8
+	Sender: Ghost Terminal
+	SenderType: external,sstp
+	SecurityLevel: local
+	Status: balloon(0=0)
+	ID: ShioriEcho.GetName
+
+
+	// response (Execution time : 0[ms])
+	SHIORI/3.0 200 OK
+	Sender: AYA
+	Charset: UTF-8
+	Value: 
+	X-SSTP-PassThru-GhostName: Taromati2
+	X-SSTP-PassThru-UserName: steve
+	```
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
   * 返值  
