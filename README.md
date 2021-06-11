@@ -19,9 +19,9 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 - `ShioriEcho`  
   命令键入完毕后事件  
   * `Reference0`  
-    终端所收集到的命令  
+	终端所收集到的命令  
   * 返值  
-    忽略，**但言灵正常执行**  
+	忽略，**但言灵正常执行**  
   * 示例  
 	```
 	// request
@@ -44,10 +44,10 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 - `ShioriEcho.GetResult`  
   查询求值结果事件  
   * 可能返值1  
-    - `X-SSTP-PassThru-Result`  
-      显示内容并进入下一命令的获取  
-    - `X-SSTP-PassThru-Type`（可选）  
-      补充信息：值类型  
+	- `X-SSTP-PassThru-Result`  
+	  显示内容并进入下一命令的获取  
+	- `X-SSTP-PassThru-Type`（可选）  
+	  补充信息：值类型  
 	- 示例  
 	  ```
 	  // request
@@ -69,8 +69,8 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  X-SSTP-PassThru-Type: 整数
 	  ```
   * 可能返值2  
-    - `X-SSTP-PassThru-Special`  
-      显示内容并进入下一命令的获取  
+	- `X-SSTP-PassThru-Special`  
+	  显示内容并进入下一命令的获取  
 	- 示例  
 	  ```
 	  // request
@@ -91,15 +91,18 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  X-SSTP-PassThru-Special: 已取消求值
 	  ```
   * 可能返值3  
-    - 空  
-      等待1秒后重新发起`ShioriEcho.GetResult`  
+	- 空  
+	  等待1秒后重新发起`ShioriEcho.GetResult`  
+  * 可能返值4  
+	- **`SHIORI/3.0 400 Bad Request`**  
+	  显示警告信息并进入下一命令的获取  
 - `ShioriEcho.GetName`  
   ghost_terminal启动时事件  
   * 返值  
-    - `X-SSTP-PassThru-GhostName`（可选）  
-      显示人格名  
-    - `X-SSTP-PassThru-UserName`（可选）  
-      显示用户名  
+	- `X-SSTP-PassThru-GhostName`（可选）  
+	  显示人格名  
+	- `X-SSTP-PassThru-UserName`（可选）  
+	  显示用户名  
   * 示例  
 	```
 	// request
@@ -123,5 +126,5 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
   * 返值  
-    忽略，**但言灵正常执行**  
+	忽略，**但言灵正常执行**  
 
