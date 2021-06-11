@@ -21,7 +21,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * `Reference0`  
     终端所收集到的命令  
   * 返值  
-    **忽略**  
+    忽略，**但言灵正常执行**  
   * 示例  
 	```
 	// request
@@ -45,7 +45,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   查询求值结果事件  
   * 可能返值1  
     - `X-SSTP-PassThru-Result`  
-      显示内容并进入下一行内容的获取  
+      显示内容并进入下一命令的获取  
     - `X-SSTP-PassThru-Type`（可选）  
       补充信息：值类型  
 	- 示例  
@@ -70,7 +70,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  ```
   * 可能返值2  
     - `X-SSTP-PassThru-Special`  
-      显示内容并进入下一行内容的获取  
+      显示内容并进入下一命令的获取  
 	- 示例  
 	  ```
 	  // request
@@ -123,5 +123,5 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
   * 返值  
-    **忽略**  
+    忽略，**但言灵正常执行**  
 
