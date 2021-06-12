@@ -38,6 +38,11 @@ int main(){
 							wcout << "Type: " << Result[L"Type"] << endl;
 						break;
 					}
+					else if(Result.has(L"Type")){
+						wcout << "has Type but no Result here:\n"
+							  << Result << endl;
+						break;
+					}
 					else{
 						Sleep(1000);
 						continue;
