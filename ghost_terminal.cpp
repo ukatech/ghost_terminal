@@ -18,7 +18,7 @@ int main(){
 		wstring commad;
 		SSTP_ret_t Result;
 		wcout << ">> ";
-		while (wcin >> commad && commad != L"exit") {
+		while (getline(wcin,commad) && commad != L"exit") {
 			if(!linker.Has_Event(L"ShioriEcho"))
 				wcout << "Event Has_Event or ShioriEcho Not define.\n";
 			linker.NOTYFY({ { L"Event", L"ShioriEcho" },
