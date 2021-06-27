@@ -27,9 +27,10 @@ int main(){
 			{
 				do{
 					Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
-					if(Result.get_code()==400)//Bad Request
+					if(Result.get_code()==400){//Bad Request
 						wcout << "Event ShioriEcho.GetResult Not define.\n";
-					else if(Result.has(L"Special")){
+						break;
+					}else if(Result.has(L"Special")){
 						wcout << Result[L"Special"] << endl;
 						break;
 					}else if(Result.has(L"Result")){
