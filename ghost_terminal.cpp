@@ -1,10 +1,19 @@
 #include "..\SSTP_linker\include\SSTP.hpp"
 #include <iostream>
+#ifdef _WIN32
+	#include <fcntl.h>
+	#include <io.h>
+#endif
 int main(){
 	using namespace SSTP_link_n;
 	using namespace std;
-	wcin.imbue(locale(""));
-	wcout.imbue(locale(""));
+	#ifdef _WIN32
+		_setmode(_fileno(stdout), _O_U16TEXT);
+		_setmode(_fileno(stdin), _O_U16TEXT);
+	#else
+		wcin.imbue(locale(""));
+		wcout.imbue(locale(""));
+	#endif
 	SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
 	{
 		auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
