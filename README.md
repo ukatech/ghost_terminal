@@ -1,17 +1,18 @@
 ### ghost_terminal  
-![预览图]( ./preview.png )
-[SSTP_linker]( https://github.com/Taromati2/SSTP_linker )试做品  
+![预览图]( ./preview.png )  
+原试做品，现觉得有点用（  
+基于[SSTP_linker]( https://github.com/Taromati2/SSTP_linker )与[shell_base]( https://github.com/steve02081504/shell_base )  
 
 ### 用法  
 如同系统终端般使用ghost_terminal  
-up/down切换命令，鼠标右键快速粘贴，不支持tab补全  
+up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格支持）  
 键入你的人格所支持的表达式随后对其求值！  
-便于人格开发（实际上是相当没用的东西我知道了别骂了本就是试做品我知道现在的人格都有拖入表达式进行操作的功能哪用得到什么终端啊）  
+便于人格开发  
 
 ### 需求  
 支持`ShioriEcho`、`ShioriEcho.GetResult`的人格  
 如[Taromati2]( https://github.com/Taromati2/Taromati2 )  
-Ps：`ShioriEcho.GetName`、`ShioriEcho.End`可选  
+Ps：`ShioriEcho.GetName`、`ShioriEcho.End`、`ShioriEcho.TabPress`可选  
 
 ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[文档]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html )）  
 相关约定与范例见下  
@@ -122,6 +123,77 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Value: 
 	X-SSTP-PassThru-GhostName: Taromati2
 	X-SSTP-PassThru-UserName: steve
+	```
+- `ShioriEcho.TabPress`  
+  命令待补全时事件  
+  * `Reference0`  
+	终端所收集到的命令（光标前部分，其后部分不做传递）  
+  * `Reference1`  
+	用户连续第几次按下tab（起始值0）  
+  * 返值  
+	- `X-SSTP-PassThru-Command`（可选）  
+	  光标前的命令替换为此内容  
+  * 示例  
+	```
+	// request
+	GET SHIORI/3.0
+	Charset: UTF-8
+	Sender: Ghost Terminal
+	SenderType: external,sstp
+	SecurityLevel: local
+	Status: balloon(0=0)
+	ID: ShioriEcho.TabPress
+	Reference0: On
+	Reference1: 0
+
+
+	// response (Execution time : 0[ms])
+	SHIORI/3.0 200 OK
+	Sender: AYA
+	Charset: UTF-8
+	Value: 
+	X-SSTP-PassThru-Command: OnNoMatchingEvent.DumpedList
+
+
+	// request
+	GET SHIORI/3.0
+	Charset: UTF-8
+	Sender: Ghost Terminal
+	SenderType: external,sstp
+	SecurityLevel: local
+	Status: balloon(0=0)
+	ID: ShioriEcho.TabPress
+	Reference0: On
+	Reference1: 1
+
+
+	// response (Execution time : 0[ms])
+	SHIORI/3.0 200 OK
+	Sender: AYA
+	Charset: UTF-8
+	Value: 
+	X-SSTP-PassThru-Command: OnNoMatchingEvent.IgnoreList
+
+
+	// request
+	GET SHIORI/3.0
+	Charset: UTF-8
+	Sender: Ghost Terminal
+	SenderType: external,sstp
+	SecurityLevel: local
+	Status: balloon(0=0)
+	ID: ShioriEcho.TabPress
+	Reference0: On
+	Reference1: 2
+
+
+	// response (Execution time : 0[ms])
+	SHIORI/3.0 200 OK
+	Sender: AYA
+	Charset: UTF-8
+	Value: 
+	X-SSTP-PassThru-Command: On_basewareversion
+
 	```
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
