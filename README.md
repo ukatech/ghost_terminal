@@ -35,7 +35,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	ID: ShioriEcho
 	Reference0: 1000-7
 
-
 	// response (Execution time : 0[ms])
 	SHIORI/3.0 200 OK
 	Sender: AYA
@@ -60,7 +59,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  Status: talking,balloon(0=0)
 	  ID: ShioriEcho.GetResult
 
-
 	  // response (Execution time : 0[ms])
 	  SHIORI/3.0 200 OK
 	  Sender: AYA
@@ -82,7 +80,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  SecurityLevel: local
 	  Status: balloon(0=0)
 	  ID: ShioriEcho.GetResult
-
 
 	  // response (Execution time : 0[ms])
 	  SHIORI/3.0 200 OK
@@ -115,7 +112,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Status: balloon(0=0)
 	ID: ShioriEcho.GetName
 
-
 	// response (Execution time : 0[ms])
 	SHIORI/3.0 200 OK
 	Sender: AYA
@@ -146,7 +142,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Reference0: On
 	Reference1: 0
 
-
 	// response (Execution time : 0[ms])
 	SHIORI/3.0 200 OK
 	Sender: AYA
@@ -166,7 +161,6 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Reference0: On
 	Reference1: 1
 
-
 	// response (Execution time : 0[ms])
 	SHIORI/3.0 200 OK
 	Sender: AYA
@@ -183,17 +177,15 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	SecurityLevel: local
 	Status: balloon(0=0)
 	ID: ShioriEcho.TabPress
-	Reference0: On
-	Reference1: 2
-
+	Reference0: 'Just a'+use 
+	Reference1: 0
 
 	// response (Execution time : 0[ms])
 	SHIORI/3.0 200 OK
 	Sender: AYA
 	Charset: UTF-8
 	Value: 
-	X-SSTP-PassThru-Command: On_basewareversion
-
+	X-SSTP-PassThru-Command: 'Just a'+username
 	```
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
