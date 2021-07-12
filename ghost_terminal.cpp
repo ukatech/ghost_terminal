@@ -14,8 +14,8 @@ SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
 
 void before_login(){
 	#ifdef _WIN32
-		_setmode(_fileno(stdout), _O_U16TEXT);
-		_setmode(_fileno(stdin), _O_U16TEXT);
+		void(_setmode(_fileno(stdout), _O_U16TEXT));
+		void(_setmode(_fileno(stdin), _O_U16TEXT));
 	#else
 		wcin.imbue(locale(""));
 		wcout.imbue(locale(""));
