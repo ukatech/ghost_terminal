@@ -1,29 +1,29 @@
 ### ghost_terminal  
-![预览图]( ./preview.png )  
-原试做品，现觉得有点用（  
-基于[SSTP_linker]( https://github.com/Taromati2/SSTP_linker )与[shell_base]( https://github.com/steve02081504/shell_base )  
+![Preview]( ./preview.png )  
+The original trial product but now feels a bit useful (  
+Based on [SSTP_linker]( https://github.com/Taromati2/SSTP_linker ) and [shell_base]( https://github.com/steve02081504/shell_base )  
 
-### 用法  
-如同系统终端般使用ghost_terminal  
-up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格支持）  
-键入你的人格所支持的表达式随后对其求值！  
-便于人格开发  
+### Usage  
+Use ghost_terminal like a system terminal  
+Up/down switch command, right mouse button to quickly paste, support tab completion (if the ghost supports it)  
+Type an expression supported by your ghost and then evaluate it!  
+Facilitate ghost development  
 
-### 需求  
-支持`ShioriEcho`、`ShioriEcho.GetResult`的人格  
-如[Taromati2]( https://github.com/Taromati2/Taromati2 )  
-Ps：`ShioriEcho.GetName`、`ShioriEcho.End`、`ShioriEcho.TabPress`可选  
+### need  
+The ghost support `ShioriEcho` and `ShioriEcho.GetResult`  
+Such as [Taromati2](https://github.com/Taromati2/Taromati2 )  
+Ps: `ShioriEcho.GetName`, `ShioriEcho.End`, `ShioriEcho.TabPress` are optional  
 
-ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[文档]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html )）  
-相关约定与范例见下  
+The ghost_terminal communicates with the ghost through `X-SSTP-PassThru-*` (see [document]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html ))  
+See below for relevant conventions and examples  
 
-- `ShioriEcho`  
-  命令键入完毕后事件  
+-`ShioriEcho`  
+  Event after the command entered  
   * `Reference0`  
-	终端所收集到的命令  
-  * 返值  
-	忽略，**但言灵正常执行**  
-  * 示例  
+	Commands collected by the terminal  
+  * Return value  
+	Ignore, **but sakura script executes normally**  
+  * Example  
 	```
 	// request
 	GET SHIORI/3.0
@@ -39,16 +39,16 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	SHIORI/3.0 200 OK
 	Sender: AYA
 	Charset: UTF-8
-	Value: \0\s[0]表达式『\_q1000-7\_q』的执行结果为：\n\_q993\n类型：整数\_q\n\q[◇复制结果,OnCopy,"993"]\n\q[◇复制表达式,OnCopy,"1000-7"]\n\q[◇结果作Sakura Script執行,OnSakuraScript,"993"]\n\n\q[◇求值下一个,OnCalculateVar]\n\q[◇无用,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
+	Value: \0\s[0] The execution result of the expression "\_q1000-7\_q" is:\n\_q993\nType: integer\_q\n\q[◇Copy result,OnCopy,"993"] \n\q[◇Copy expression,OnCopy,"1000-7"]\n\q[◇Execute Result as Sakura Script,OnSakuraScript,"993"]\n\n\q[◇Next Evaluation,OnCalculateVar ]\n\q[◇Cancel,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
 	```
-- `ShioriEcho.GetResult`  
-  查询求值结果事件  
-  * 可能返值1  
-	- `X-SSTP-PassThru-Result`  
-	  显示内容并进入下一命令的获取  
-	- `X-SSTP-PassThru-Type`（可选）  
-	  补充信息：值类型  
-	- 示例  
+-`ShioriEcho.GetResult`  
+  Query evaluation result event  
+  * May return value 1  
+	-`X-SSTP-PassThru-Result`  
+	  Display the content and enter the acquisition of the next command  
+	-`X-SSTP-PassThru-Type` (optional)  
+	  Supplementary information: value type  
+	-Example  
 	  ```
 	  // request
 	  GET SHIORI/3.0
@@ -65,12 +65,12 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  Charset: UTF-8
 	  Value: 
 	  X-SSTP-PassThru-Result: 993
-	  X-SSTP-PassThru-Type: 整数
+	  X-SSTP-PassThru-Type: integer
 	  ```
-  * 可能返值2  
-	- `X-SSTP-PassThru-Special`  
-	  显示内容并进入下一命令的获取  
-	- 示例  
+  * May return value 2  
+	-`X-SSTP-PassThru-Special`  
+	  Display the content and enter the acquisition of the next command  
+	-Example  
 	  ```
 	  // request
 	  GET SHIORI/3.0
@@ -86,22 +86,22 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	  Sender: AYA
 	  Charset: UTF-8
 	  Value: 
-	  X-SSTP-PassThru-Special: 已取消求值
+	  X-SSTP-PassThru-Special: Evaluation cancelled
 	  ```
-  * 可能返值3  
-	- 空  
-	  等待1秒后重新发起`ShioriEcho.GetResult`  
-  * 可能返值4  
-	- **`SHIORI/3.0 400 Bad Request`**  
-	  显示警告信息并进入下一命令的获取  
-- `ShioriEcho.GetName`  
-  ghost_terminal启动时事件  
-  * 返值  
-	- `X-SSTP-PassThru-GhostName`（可选）  
-	  显示人格名  
-	- `X-SSTP-PassThru-UserName`（可选）  
-	  显示用户名  
-  * 示例  
+  * May return value 3  
+	- null  
+	  Wait for 1 second and re-initiate `ShioriEcho.GetResult`  
+  * May return value 4  
+	-**`SHIORI/3.0 400 Bad Request`**  
+	  Display warning information and enter the acquisition of the next command  
+-`ShioriEcho.GetName`  
+  Event when ghost_terminal starts  
+  * Return value  
+	-`X-SSTP-PassThru-GhostName` (optional)  
+	  Display ghost name  
+	-`X-SSTP-PassThru-UserName` (optional)  
+	  Show username  
+  * Example  
 	```
 	// request
 	GET SHIORI/3.0
@@ -120,16 +120,16 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	X-SSTP-PassThru-GhostName: Taromati2
 	X-SSTP-PassThru-UserName: steve
 	```
-- `ShioriEcho.TabPress`  
-  命令待补全时事件  
+-`ShioriEcho.TabPress`  
+  Event when the command is to be completed  
   * `Reference0`  
-	终端所收集到的命令（光标前部分，其后部分不做传递）  
+	Commands collected by the terminal (Just the part before the cursor, part after it is not passed)  
   * `Reference1`  
-	用户连续第几次按下tab（起始值0）  
-  * 返值  
-	- `X-SSTP-PassThru-Command`（可选）  
-	  光标前的命令替换为此内容  
-  * 示例  
+	The user presses tab several times in a row (starting value 0)  
+  * Return value  
+	-`X-SSTP-PassThru-Command` (optional)  
+	  Replace the command before the cursor with this content  
+  * Example  
 	```
 	// request
 	GET SHIORI/3.0
@@ -177,7 +177,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	SecurityLevel: local
 	Status: balloon(0=0)
 	ID: ShioriEcho.TabPress
-	Reference0: 'Just a'+use 
+	Reference0: 'Just a '+use 
 	Reference1: 0
 
 	// response (Execution time : 0[ms])
@@ -185,16 +185,16 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Sender: AYA
 	Charset: UTF-8
 	Value: 
-	X-SSTP-PassThru-Command: 'Just a'+username
+	X-SSTP-PassThru-Command: 'Just a '+username
 	```
-- `ShioriEcho.End`  
-  ghost_terminal通过键入exit退出时事件  
-  * 返值  
-	忽略，**但言灵正常执行**  
+-`ShioriEcho.End`  
+  Event when ghost_terminal exits by typing exit  
+  * Return value  
+	Ignore, **but sakura script executes normally**  
 
-### 范例  
-范例代码节选于Taromati2  
-随意修改/复制/使用  
+### Examples  
+Sample code excerpt from Taromati2  
+Feel free to modify/copy/use  
 ```aya
 SHIORI_EV.On_Has_Event : void {
 	SHIORI_FW.Make_X_SSTP_PassThru('Result',ISFUNC(reference0)||ISFUNC('On_'+reference0)||ISFUNC('SHIORI_EV.'+reference0)||ISFUNC('SHIORI_EV.On_'+reference0))
@@ -210,7 +210,7 @@ On_ShioriEcho {
 	case CUTSPACE(reference0){
 		when 'reload'{
 			OnReloadShiori
-			ShioriEcho.Special='重载中'
+			ShioriEcho.Special='Overloading'
 		}
 		when 'errorlog'{
 			OnErrorLog
@@ -220,7 +220,7 @@ On_ShioriEcho {
 			if RE_GREP(reference0,'^\s*help\s+'){
 				ShioriEcho.Special=Get_AYA_Function_Info(RE_REPLACE(reference0,'^\s*help\s+',''))
 				if !ShioriEcho.Special
-					ShioriEcho.Special='不是系统函数'
+					ShioriEcho.Special='Not a system function'
 			}
 			else{
 				OnCalculateVar
@@ -242,7 +242,7 @@ On_ShioriEcho.GetResult:void {
 	if ISVAR('ShioriEcho.Special'){
 		SHIORI_FW.Make_X_SSTP_PassThru('Special',ShioriEcho.Special)
 		if !ShioriEcho.Special
-			BUGNow('ShioriEcho.Special内容为空')
+			BUGNow('ShioriEcho.Special content is empty')
 	}
 	else{
 		if ISVAR('ShioriEcho.Result'){

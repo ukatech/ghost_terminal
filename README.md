@@ -177,7 +177,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	SecurityLevel: local
 	Status: balloon(0=0)
 	ID: ShioriEcho.TabPress
-	Reference0: 'Just a'+use 
+	Reference0: 'Just a '+use 
 	Reference1: 0
 
 	// response (Execution time : 0[ms])
@@ -185,7 +185,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Sender: AYA
 	Charset: UTF-8
 	Value: 
-	X-SSTP-PassThru-Command: 'Just a'+username
+	X-SSTP-PassThru-Command: 'Just a '+username
 	```
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
