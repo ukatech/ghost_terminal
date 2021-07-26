@@ -17,7 +17,7 @@ Ps: `ShioriEcho.GetName`, `ShioriEcho.End`, `ShioriEcho.TabPress` are optional
 The ghost_terminal communicates with the ghost through `X-SSTP-PassThru-*` (see [document]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html ))  
 See below for relevant conventions and examples  
 
--`ShioriEcho`  
+- `ShioriEcho`  
   Event after the command entered  
   * `Reference0`  
 	Commands collected by the terminal  
@@ -41,14 +41,14 @@ See below for relevant conventions and examples
 	Charset: UTF-8
 	Value: \0\s[0] The execution result of the expression "\_q1000-7\_q" is:\n\_q993\nType: integer\_q\n\q[◇Copy result,OnCopy,"993"] \n\q[◇Copy expression,OnCopy,"1000-7"]\n\q[◇Execute Result as Sakura Script,OnSakuraScript,"993"]\n\n\q[◇Next Evaluation,OnCalculateVar ]\n\q[◇Cancel,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
 	```
--`ShioriEcho.GetResult`  
+- `ShioriEcho.GetResult`  
   Query evaluation result event  
   * May return value 1  
-	-`X-SSTP-PassThru-Result`  
+	- `X-SSTP-PassThru-Result`  
 	  Display the content and enter the acquisition of the next command  
-	-`X-SSTP-PassThru-Type` (optional)  
+	- `X-SSTP-PassThru-Type` (optional)  
 	  Supplementary information: value type  
-	-Example  
+	- Example  
 	  ```
 	  // request
 	  GET SHIORI/3.0
@@ -68,9 +68,9 @@ See below for relevant conventions and examples
 	  X-SSTP-PassThru-Type: integer
 	  ```
   * May return value 2  
-	-`X-SSTP-PassThru-Special`  
+	- `X-SSTP-PassThru-Special`  
 	  Display the content and enter the acquisition of the next command  
-	-Example  
+	- Example  
 	  ```
 	  // request
 	  GET SHIORI/3.0
@@ -92,14 +92,14 @@ See below for relevant conventions and examples
 	- null  
 	  Wait for 1 second and re-initiate `ShioriEcho.GetResult`  
   * May return value 4  
-	-**`SHIORI/3.0 400 Bad Request`**  
+	- **`SHIORI/3.0 400 Bad Request`**  
 	  Display warning information and enter the acquisition of the next command  
--`ShioriEcho.GetName`  
+- `ShioriEcho.GetName`  
   Event when ghost_terminal starts  
   * Return value  
-	-`X-SSTP-PassThru-GhostName` (optional)  
+	- `X-SSTP-PassThru-GhostName` (optional)  
 	  Display ghost name  
-	-`X-SSTP-PassThru-UserName` (optional)  
+	- `X-SSTP-PassThru-UserName` (optional)  
 	  Show username  
   * Example  
 	```
@@ -120,14 +120,14 @@ See below for relevant conventions and examples
 	X-SSTP-PassThru-GhostName: Taromati2
 	X-SSTP-PassThru-UserName: steve
 	```
--`ShioriEcho.TabPress`  
+- `ShioriEcho.TabPress`  
   Event when the command is to be completed  
   * `Reference0`  
 	Commands collected by the terminal (Just the part before the cursor, part after it is not passed)  
   * `Reference1`  
 	The user presses tab several times in a row (starting value 0)  
   * Return value  
-	-`X-SSTP-PassThru-Command` (optional)  
+	- `X-SSTP-PassThru-Command` (optional)  
 	  Replace the command before the cursor with this content  
   * Example  
 	```
@@ -187,14 +187,14 @@ See below for relevant conventions and examples
 	Value: 
 	X-SSTP-PassThru-Command: 'Just a '+username
 	```
--`ShioriEcho.End`  
+- `ShioriEcho.End`  
   Event when ghost_terminal exits by typing exit  
   * Return value  
 	Ignore, **but sakura script executes normally**  
 
 ### Examples  
 Sample code excerpt from Taromati2  
-Feel free to modify/copy/use  
+Free to modify/copy/use  
 ```aya
 SHIORI_EV.On_Has_Event : void {
 	SHIORI_FW.Make_X_SSTP_PassThru('Result',ISFUNC(reference0)||ISFUNC('On_'+reference0)||ISFUNC('SHIORI_EV.'+reference0)||ISFUNC('SHIORI_EV.On_'+reference0))
