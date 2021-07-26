@@ -192,3 +192,67 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 返值  
 	忽略，**但言灵正常执行**  
 
+### 范例  
+范例代码节选于Taromati2  
+随意修改/复制/使用  
+```aya
+SHIORI_EV.On_Has_Event : void {
+	SHIORI_FW.Make_X_SSTP_PassThru('Result',ISFUNC(reference0)||ISFUNC('On_'+reference0)||ISFUNC('SHIORI_EV.'+reference0)||ISFUNC('SHIORI_EV.On_'+reference0))
+}
+```
+```aya
+On_ShioriEcho.GetName:void {
+	SHIORI_FW.Make_X_SSTP_PassThru('GhostName',ghostname)
+	SHIORI_FW.Make_X_SSTP_PassThru('UserName',username)
+}
+On_ShioriEcho {
+	ClearShioriEchoVar
+	case CUTSPACE(reference0){
+		when 'reload'{
+			OnReloadShiori
+			ShioriEcho.Special='重载中'
+		}
+		when 'errorlog'{
+			OnErrorLog
+			ShioriEcho.Result=GETERRORLOG
+		}
+		others{
+			if RE_GREP(reference0,'^\s*help\s+'){
+				ShioriEcho.Special=Get_AYA_Function_Info(RE_REPLACE(reference0,'^\s*help\s+',''))
+				if !ShioriEcho.Special
+					ShioriEcho.Special='不是系统函数'
+			}
+			else{
+				OnCalculateVar
+				--
+				IgnoreChoiceTimeout
+			}
+		}
+	}
+}
+On_ShioriEcho.TabPress{
+	_lastname=RE_REPLACE(reference0,'^[\s\S]*[\[\]\(\)\+\-\*\/\=\'+"'"+'\" ]','')
+	_possible_names=(GETVARLIST(_lastname),GETFUNCLIST(_lastname),GETSYSTEMFUNCLIST(_lastname),ARRAY.BeginAs(_lastname,'reload','errorlog'))
+	if ARRAYSIZE(_possible_names){
+		_name_after_tab=_possible_names[reference1%ARRAYSIZE(_possible_names)]
+		SHIORI_FW.Make_X_SSTP_PassThru('Command',RE_REPLACE(reference0,_lastname+'$',_name_after_tab))
+	}
+}
+On_ShioriEcho.GetResult:void {
+	if ISVAR('ShioriEcho.Special'){
+		SHIORI_FW.Make_X_SSTP_PassThru('Special',ShioriEcho.Special)
+		if !ShioriEcho.Special
+			BUGNow('ShioriEcho.Special内容为空')
+	}
+	else{
+		if ISVAR('ShioriEcho.Result'){
+			SHIORI_FW.Make_X_SSTP_PassThru('Result',ValueTOstring(ShioriEcho.Result))
+			SHIORI_FW.Make_X_SSTP_PassThru('Type',GETTYPE.string((ShioriEcho.Result)))
+		}
+	}
+	ClearShioriEchoVar
+}
+ClearShioriEchoVar:void {
+	ERASEALLVARBEGINAS('ShioriEcho.')
+}
+```
