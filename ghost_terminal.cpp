@@ -1,4 +1,5 @@
 #include "my-gists/ukagaka/SSTP.hpp"
+#include "my-gists/STL/replace_all.hpp"
 #include <iostream>
 #ifdef _WIN32
 	#include <fcntl.h>
@@ -11,6 +12,17 @@ using namespace SSTP_link_n;
 using namespace std;
 
 SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
+
+wstring&do_transfer(wstring &a) {
+	replace_all(a, L"\\n", L"\n");
+	replace_all(a, L"\\\n", L"\\n");
+
+	replace_all(a, L"\\t", L"\t");
+	replace_all(a, L"\\\t", L"\\t");
+
+	replace_all(a, L"\\\\", L"\\");
+	return a;
+}
 
 void before_login(){
 	#ifdef _WIN32
@@ -52,7 +64,7 @@ void terminal_run(const wstring&command){
 				wcout << "Event ShioriEcho.GetResult Not define.\n";
 				break;
 			}else if(Result.has(L"Special")){
-				wcout << Result[L"Special"] << endl;
+				wcout << do_transfer(Result[L"Special"]) << endl;
 				break;
 			}else if(Result.has(L"Result")){
 				wcout << Result[L"Result"] << endl;
