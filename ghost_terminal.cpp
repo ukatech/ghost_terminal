@@ -1,4 +1,4 @@
-#include "..\SSTP_linker\include\SSTP.hpp"
+#include "my-gists/ukagaka/SSTP.hpp"
 #include <iostream>
 #ifdef _WIN32
 	#include <fcntl.h>
