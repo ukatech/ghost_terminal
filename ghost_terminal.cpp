@@ -15,10 +15,10 @@ SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
 
 wstring&do_transfer(wstring &a) {
 	replace_all(a, L"\\n", L"\n");
-	replace_all(a, L"\\\n", L"\\n");
+	replace_all(a, L"\\\n", L"\\\\n");
 
 	replace_all(a, L"\\t", L"\t");
-	replace_all(a, L"\\\t", L"\\t");
+	replace_all(a, L"\\\t", L"\\\\t");
 
 	replace_all(a, L"\\\\", L"\\");
 	return a;
