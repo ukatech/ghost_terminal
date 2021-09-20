@@ -70,6 +70,10 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 可能返值2  
 	- `X-SSTP-PassThru-Special`  
 	  显示内容并进入下一命令的获取  
+	  var8后这个返回值将经过简单转义：  
+	  * `\n` 将转换为换行  
+	  * `\t` 将转变为制表符  
+	  * `\\` 将转化为 `\`  
 	- 示例  
 	  ```
 	  // request

@@ -70,6 +70,10 @@ See below for relevant conventions and examples
   * May return value 2  
 	- `X-SSTP-PassThru-Special`  
 	  Display the content and enter the acquisition of the next command  
+	  After var8 this return value will be simply escaped.  
+	  * `\n` will be converted to a newline  
+	  * `\t` will be converted to a tab  
+	  * `\\` will be converted to `\`  
 	- Example  
 	  ```
 	  // request
