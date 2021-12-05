@@ -1,4 +1,5 @@
-#include "my-gists/ukagaka/SSTP.hpp"
+﻿#include "my-gists/ukagaka/SSTP.hpp"
+#include "my-gists/ukagaka/SFMO.hpp"
 #include "my-gists/STL/replace_all.hpp"
 #include <iostream>
 #ifdef _WIN32
@@ -34,6 +35,61 @@ void before_login(){
 	#endif
 }
 void terminal_login(){
+	SFMO_t fmobj;
+	if (fmobj.Update_info()) {
+		auto ghostnum= fmobj.info_map.size();
+		HWND ghost_hwnd = NULL;
+		if(ghostnum ==1){
+			wcout << "Only one ghost was running.\n";
+			ghost_hwnd=(HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(),nullptr,10);
+		}
+		else if (ghostnum == 0) {
+			wcerr << "None of ghost was running.\n";
+			exit(1);
+		}
+		else {
+			wcout << "Select the ghost you want to log into.[Up/Down/Enter]\n";
+			auto c=_getwch();
+			switch(c){
+			case 27://esc
+				exit(0);
+			case WEOF:
+			case 13://enter
+			case 9:{//tab
+				
+			}
+			case 0xE0:{//方向字符先导字符
+				switch(_getwch()){
+				case 72://up
+				case 83://delete
+				case 75://left
+					break;
+				case 77://right
+				case 80://down
+					break;
+				}
+				break;
+			}
+			}
+		}
+		#ifdef _DEBUG
+			wcout << "ghost_hwnd: "<< (size_t)ghost_hwnd <<"\n";
+		#endif // _DEBUG
+		if(!linker.link_to_ghost(ghost_hwnd)){
+			wcerr<< "Failed to link to ghost, trying to use socket...\n";
+			if(!linker.Socket_link()){
+				wcerr<< "Failed.\n";
+				exit(1);
+			}
+		}
+	}
+	else {
+		wcerr << "Can\'t read FMO info, trying to use socket...\n";
+		if(!linker.Socket_link()){
+			wcerr<< "Failed.\n";
+			exit(1);
+		}
+	}
 	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
 	wcout << "terminal login\n";
 	if(names.has(L"GhostName"))
@@ -86,4 +142,18 @@ void terminal_run(const wstring&command){
 }
 void terminal_exit(){
 	linker.NOTYFY({ { L"Event", L"ShioriEcho.End" } });
+}
+void terminal_args(size_t argc, std::vector<std::wstring>&argv) {
+	if(argc==1)
+		return;
+	if(argv[1]==L"-c"){
+		size_t tmp=1;
+		wstring command;
+		while(tmp++!=argc-1){
+			command+=L' ';
+			command+=argv[tmp];
+		}
+		command.erase(0,1);
+		terminal_run(command);
+	}
 }
