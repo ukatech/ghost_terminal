@@ -1,6 +1,7 @@
 ﻿#include "my-gists/ukagaka/SSTP.hpp"
 #include "my-gists/ukagaka/SFMO.hpp"
 #include "my-gists/STL/replace_all.hpp"
+#include "my-gists/windows/Cursor.hpp"//saveCursorPos、resetCursorPos
 #include <iostream>
 #ifdef _WIN32
 	#include <fcntl.h>
@@ -34,6 +35,8 @@ void before_login(){
 		wcout.imbue(locale(""));
 	#endif
 }
+size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
+void putchar_x_time(wchar_t the_char, size_t time);
 void terminal_login(){
 	SFMO_t fmobj;
 	if (fmobj.Update_info()) {
@@ -49,27 +52,49 @@ void terminal_login(){
 		}
 		else {
 			wcout << "Select the ghost you want to log into.[Up/Down/Enter]\n";
-			auto c=_getwch();
-			switch(c){
-			case 27://esc
-				exit(0);
-			case WEOF:
-			case 13://enter
-			case 9:{//tab
-				
-			}
-			case 0xE0:{//方向字符先导字符
-				switch(_getwch()){
-				case 72://up
-				case 83://delete
-				case 75://left
-					break;
-				case 77://right
-				case 80://down
-					break;
+			saveCursorPos();
+			auto pbg = fmobj.info_map.begin();
+			auto ped = fmobj.info_map.end();
+			auto p = pbg;
+			while(!ghost_hwnd){
+				wcout << p->second[L"name"];
+				auto c=_getwch();
+				resetCursorPos();
+				auto size = GetStrWide(p->second[L"name"]);
+				putchar_x_time(' ', size);
+				resetCursorPos();
+				switch(c){
+					case 27://esc
+						exit(0);
+					case WEOF:
+					case 13://enter
+						ghost_hwnd=(HWND)wcstoll(p->second.map[L"hwnd"].c_str(),nullptr,10);
+						break;
+					case 9:{//tab
+						p++;
+						if(p==ped)
+							p=pbg;
+						break;
+					}
+					case 0xE0:{//方向字符先导字符
+						switch(_getwch()){
+						case 72://up
+						case 83://delete
+						case 75://left
+							if(p==pbg)
+								p=ped;
+							p--;
+							break;
+						case 77://right
+						case 80://down
+							p++;
+							if(p==ped)
+								p=pbg;
+							break;
+						}
+						break;
+					}
 				}
-				break;
-			}
 			}
 		}
 		#ifdef _DEBUG
@@ -154,6 +179,9 @@ void terminal_args(size_t argc, std::vector<std::wstring>&argv) {
 			command+=argv[tmp];
 		}
 		command.erase(0,1);
+		terminal_login();
 		terminal_run(command);
+		terminal_exit();
+		exit(0);
 	}
 }
