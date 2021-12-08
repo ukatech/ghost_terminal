@@ -98,6 +98,7 @@ See below for relevant conventions and examples
   * May return value 4  
 	- **`SHIORI/3.0 400 Bad Request`**  
 	  Display warning information and enter the acquisition of the next command  
+	  After var9: When ghost responds normally to any `ShioriEcho.GetResult` request, ghost_terminal will ignore such a return message and wait one second, as it is `May return value 3`  
 - `ShioriEcho.GetName`  
   Event when ghost_terminal starts  
   * Return value  
@@ -193,6 +194,7 @@ See below for relevant conventions and examples
 	```
 - `ShioriEcho.End`  
   Event when ghost_terminal exits by typing exit  
+  After var9: any normal program exit will trigger this  
   * Return value  
 	Ignore, **but sakura script executes normally**  
 
@@ -213,8 +215,8 @@ On_ShioriEcho {
 	ClearShioriEchoVar
 	case CUTSPACE(reference0){
 		when 'reload'{
+			ReloadFromTerminal=1
 			OnReloadShiori
-			ShioriEcho.Special='Overloading'
 		}
 		when 'errorlog'{
 			OnErrorLog

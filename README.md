@@ -98,6 +98,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 可能返值4  
 	- **`SHIORI/3.0 400 Bad Request`**  
 	  显示警告信息并进入下一命令的获取  
+	  var9后：当ghost任意一次正常回应`ShioriEcho.GetResult`请求后，将忽略这样的回信并等待一秒，如同可能返值3一样  
 - `ShioriEcho.GetName`  
   ghost_terminal启动时事件  
   * 返值  
@@ -193,6 +194,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	```
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
+  var9后：任何正常程序退出都会触发  
   * 返值  
 	忽略，**但言灵正常执行**  
 
@@ -213,8 +215,8 @@ On_ShioriEcho {
 	ClearShioriEchoVar
 	case CUTSPACE(reference0){
 		when 'reload'{
+			ReloadFromTerminal=1
 			OnReloadShiori
-			ShioriEcho.Special='重载中'
 		}
 		when 'errorlog'{
 			OnErrorLog
