@@ -1,5 +1,5 @@
 ﻿#include "my-gists/ukagaka/SSTP.hpp"
-#include "my-gists/ukagaka/SFMO.hpp"
+//#include "my-gists/ukagaka/SFMO.hpp"
 #include "my-gists/STL/replace_all.hpp"
 #include "my-gists/windows/Cursor.hpp"//saveCursorPos、resetCursorPos
 #include <iostream>
@@ -39,6 +39,7 @@ void before_login(){
 size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
 void putchar_x_time(wchar_t the_char, size_t time);
 void terminal_login(){
+	/*
 	SFMO_t fmobj;
 	if (fmobj.Update_info()) {
 		auto ghostnum= fmobj.info_map.size();
@@ -116,6 +117,7 @@ void terminal_login(){
 			exit(1);
 		}
 	}
+	*/
 	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
 	wcout << "terminal login\n";
 	if(names.has(L"GhostName"))
