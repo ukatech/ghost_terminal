@@ -25,8 +25,9 @@ wstring&do_transfer(wstring &a) {
 	replace_all(a, L"\\\\", L"\\");
 	return a;
 }
-
+bool has_GetResult;
 void before_login(){
+	has_GetResult=0;
 	#ifdef _WIN32
 		void(_setmode(_fileno(stdout), _O_U16TEXT));
 		void(_setmode(_fileno(stdin), _O_U16TEXT));
@@ -133,35 +134,35 @@ wstring terminal_tab_press(const wstring&command,size_t tab_num){
 		return command;
 }
 void terminal_run(const wstring&command){
-	if (command != L"exit") {
-		if(!linker.Has_Event(L"ShioriEcho"))
-			wcout << "Event Has_Event or ShioriEcho Not define.\n";
-		linker.NOTYFY({ { L"Event", L"ShioriEcho" },
-						{ L"Reference0", command }
-					  });
-		floop{
-			auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
-			if(Result.get_code()==400){//Bad Request
-				wcout << "Event ShioriEcho.GetResult Not define.\n";
-				break;
-			}else if(Result.has(L"Special")){
-				wcout << do_transfer(Result[L"Special"]) << endl;
-				break;
-			}else if(Result.has(L"Result")){
-				wcout << Result[L"Result"] << endl;
-				if(Result.has(L"Type"))
-					wcout << "Type: " << Result[L"Type"] << endl;
-				break;
-			}
-			else if(Result.has(L"Type")){
-				wcout << "has Type but no Result here:\n"
-					  << Result << endl;
-				break;
-			}
-			else{
-				Sleep(1000);
-				continue;
-			}
+	if(!linker.Has_Event(L"ShioriEcho"))
+		wcout << "Event Has_Event or ShioriEcho Not define.\n";
+	linker.NOTYFY({ { L"Event", L"ShioriEcho" },
+					{ L"Reference0", command }
+				  });
+	floop{
+		auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
+		if(!has_GetResult && Result.get_code()==400){//Bad Request
+			wcout << "Event ShioriEcho.GetResult Not define.\n";
+			break;
+		}else
+			has_GetResult=1;
+		if(Result.has(L"Special")){
+			wcout << do_transfer(Result[L"Special"]) << endl;
+			break;
+		}else if(Result.has(L"Result")){
+			wcout << Result[L"Result"] << endl;
+			if(Result.has(L"Type"))
+				wcout << "Type: " << Result[L"Type"] << endl;
+			break;
+		}
+		else if(Result.has(L"Type")){
+			wcout << "has Type but no Result here:\n"
+				  << Result << endl;
+			break;
+		}
+		else{
+			Sleep(1000);
+			continue;
 		}
 	}
 }
