@@ -9,10 +9,24 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 键入你的人格所支持的表达式随后对其求值！  
 便于人格开发  
 
+#### 命令行参数（Ver10后）  
+```bat
+ghost_terminal.exe -g ghost_name -c command
+# or
+ghost_terminal.exe -gh ghost_hwnd -c command
+```
+比如：  
+```bat
+//...
+..\saori\ghost_terminal.exe -g Taromati2 -c reload
+@echo on
+```
+ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`  
+
 ### 需求  
 支持`ShioriEcho`、`ShioriEcho.GetResult`的人格  
 如[Taromati2]( https://github.com/Taromati2/Taromati2 )  
-Ps：`ShioriEcho.GetName`、`ShioriEcho.End`、`ShioriEcho.TabPress`可选  
+Ps：`ShioriEcho.GetName`、`ShioriEcho.End`、`ShioriEcho.TabPress`、`ShioriEcho.Begin`可选  
 
 ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[文档]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html )）  
 相关约定与范例见下  
@@ -70,7 +84,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 可能返值2  
 	- `X-SSTP-PassThru-Special`  
 	  显示内容并进入下一命令的获取  
-	  var8后这个返回值将经过简单转义：  
+	  Ver8后这个返回值将经过简单转义：  
 	  * `\n` 将转换为换行  
 	  * `\t` 将转变为制表符  
 	  * `\\` 将转化为 `\`  
@@ -98,9 +112,12 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 可能返值4  
 	- **`SHIORI/3.0 400 Bad Request`**  
 	  显示警告信息并进入下一命令的获取  
-	  var9后：当ghost任意一次正常回应`ShioriEcho.GetResult`请求后，将忽略这样的回信并等待一秒，如同可能返值3一样  
+	  Ver9后：当ghost任意一次正常回应`ShioriEcho.GetResult`请求后，将忽略这样的回信并等待一秒，如同可能返值3一样  
 - `ShioriEcho.GetName`  
-  ghost_terminal启动时事件  
+  ghost_terminal获取名称时事件  
+  Ver10前：ghost_terminal启动时事件  
+  * `Reference0`(Ver10后)  
+	终端版本  
   * 返值  
 	- `X-SSTP-PassThru-GhostName`（可选）  
 	  显示人格名  
@@ -192,9 +209,15 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 	Value: 
 	X-SSTP-PassThru-Command: 'Just a '+username
 	```
+- `ShioriEcho.Begin`(Ver10后)  
+  ghost_terminal对此ghost启动时事件  
+  * `Reference0`  
+	终端版本  
+  * 返值  
+	忽略，**但言灵正常执行**  
 - `ShioriEcho.End`  
   ghost_terminal通过键入exit退出时事件  
-  var9后：任何正常程序退出都会触发  
+  Ver9后：任何正常程序退出都会触发  
   * 返值  
 	忽略，**但言灵正常执行**  
 
@@ -213,6 +236,7 @@ On_ShioriEcho.GetName:void {
 }
 On_ShioriEcho {
 	ClearShioriEchoVar
+	reference0 = reference.raw[0]
 	case CUTSPACE(reference0){
 		when 'reload'{
 			ReloadFromTerminal=1
@@ -223,10 +247,36 @@ On_ShioriEcho {
 			ShioriEcho.Result=GETERRORLOG
 		}
 		others{
-			if RE_GREP(reference0,'^\s*help\s+'){
-				ShioriEcho.Special=Get_AYA_Function_Info(RE_REPLACE(reference0,'^\s*help\s+',''))
-				if !ShioriEcho.Special
-					ShioriEcho.Special='不是系统函数'
+			if RE_GREP(reference0,'^\s*(help|openfunc)\s+'){
+				if RE_GREP(reference0,'^\s*help\s+'){
+					_funcname=RE_REPLACE(reference0,'^\s*help\s+','')
+					ShioriEcho.Special=Get_AYA_Function_Info(_funcname)
+					if ShioriEcho.Special{
+						'aya自带底层函数\n'+ShioriEcho.Special+'\n/
+						\q[◇打开在线文档,OnUrlOpen,'+Get_AYA_Function_Doc(_funcname)+']\n/
+						\q[◇无用,Cancel]\n/
+						'
+						--
+						IgnoreChoiceTimeout
+					}
+					else
+						ShioriEcho.Special='不是系统函数'
+				}
+				elseif RE_GREP(reference0,'^\s*openfunc\s+'){
+					_funcname=RE_REPLACE(reference0,'^\s*openfunc\s+','')
+					_info=GETFUNCINFO(_funcname)
+					_path=SPLITPATH(_info[0])
+					if _path
+						_path=_path[2]+_path[3]
+					else
+						_path=_info[0]
+					if _info!=-1{
+						OnOpenDicWithLineNum(_info[0],_info[1])
+						ShioriEcho.Special="打开%(_path)第%(_info[1])行"
+					}
+					else
+						ShioriEcho.Special='不是用户函数'
+				}
 			}
 			else{
 				OnCalculateVar
@@ -238,13 +288,21 @@ On_ShioriEcho {
 }
 On_ShioriEcho.TabPress{
 	_lastname=RE_REPLACE(reference0,'^[\s\S]*[\[\]\(\)\+\-\*\/\=\'+"'"+'\" ]','')
-	_possible_names=(GETVARLIST(_lastname),GETFUNCLIST(_lastname),GETSYSTEMFUNCLIST(_lastname),ARRAY.BeginAs(_lastname,'reload','errorlog'))
+	_possible_names=IARRAY
+	if !reference0[1,' ']
+		_possible_names,=ARRAY.BeginAs(_lastname,'reload','errorlog','openfunc','help')
+	if reference0[0,' '] == 'help'
+		_possible_names=GETSYSTEMFUNCLIST(_lastname)
+	elseif reference0[0,' '] == 'openfunc'
+		_possible_names=GETFUNCLIST(_lastname)
+	else
+		_possible_names,=(GETVARLIST(_lastname),GETFUNCLIST(_lastname),GETSYSTEMFUNCLIST(_lastname))
 	if ARRAYSIZE(_possible_names){
 		_name_after_tab=_possible_names[reference1%ARRAYSIZE(_possible_names)]
 		SHIORI_FW.Make_X_SSTP_PassThru('Command',RE_REPLACE(reference0,_lastname+'$',_name_after_tab))
 	}
 }
-On_ShioriEcho.GetResult:void {
+On_ShioriEcho.GetResult {
 	if ISVAR('ShioriEcho.Special'){
 		SHIORI_FW.Make_X_SSTP_PassThru('Special',ShioriEcho.Special)
 		if !ShioriEcho.Special

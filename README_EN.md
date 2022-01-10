@@ -9,10 +9,24 @@ Up/down switch command, right mouse button to quickly paste, support tab complet
 Type an expression supported by your ghost and then evaluate it!  
 Facilitate ghost development  
 
+#### Command line parameters (after Ver10)  
+```bat
+ghost_terminal.exe -g ghost_name -c command
+# or
+ghost_terminal.exe -gh ghost_hwnd -c command
+```
+For example:  
+```bat
+//...
+... \saori\ghost_terminal.exe -g Taromati2 -c reload
+@echo on
+```
+ghost_name can be either the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`  
+
 ### need  
 The ghost support `ShioriEcho` and `ShioriEcho.GetResult`  
 Such as [Taromati2](https://github.com/Taromati2/Taromati2 )  
-Ps: `ShioriEcho.GetName`, `ShioriEcho.End`, `ShioriEcho.TabPress` are optional  
+Ps: `ShioriEcho.GetName`, `ShioriEcho.End`, `ShioriEcho.TabPress`, `ShioriEcho.Begin` are optional  
 
 The ghost_terminal communicates with the ghost through `X-SSTP-PassThru-*` (see [document]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html ))  
 See below for relevant conventions and examples  
@@ -70,7 +84,7 @@ See below for relevant conventions and examples
   * May return value 2  
 	- `X-SSTP-PassThru-Special`  
 	  Display the content and enter the acquisition of the next command  
-	  After var8 this return value will be simply escaped.  
+	  After Ver8 this return value will be simply escaped.  
 	  * `\n` will be converted to a newline  
 	  * `\t` will be converted to a tab  
 	  * `\\` will be converted to `\`  
@@ -98,9 +112,12 @@ See below for relevant conventions and examples
   * May return value 4  
 	- **`SHIORI/3.0 400 Bad Request`**  
 	  Display warning information and enter the acquisition of the next command  
-	  After var9: When ghost responds normally to any `ShioriEcho.GetResult` request, ghost_terminal will ignore such a return message and wait one second, as it is `May return value 3`  
+	  After Ver9: When ghost responds normally to any `ShioriEcho.GetResult` request, ghost_terminal will ignore such a return message and wait one second, as it is `May return value 3`  
 - `ShioriEcho.GetName`  
-  Event when ghost_terminal starts  
+  Event when ghost_terminal get name from ghost  
+  Pre-Ver10: event when ghost_terminal starts  
+  * `Reference0` (after Ver10)  
+	Terminal version  
   * Return value  
 	- `X-SSTP-PassThru-GhostName` (optional)  
 	  Display ghost name  
@@ -192,9 +209,15 @@ See below for relevant conventions and examples
 	Value: 
 	X-SSTP-PassThru-Command: 'Just a '+username
 	```
+- `ShioriEcho.Begin` (after Ver10)  
+  Event when ghost_terminal startup for this ghost  
+  * `Reference0`  
+	Terminal version  
+  * Return value  
+	Ignore, **but sakura script executes normally**  
 - `ShioriEcho.End`  
   Event when ghost_terminal exits by typing exit  
-  After var9: any normal program exit will trigger this  
+  After Ver9: any normal program exit will trigger this  
   * Return value  
 	Ignore, **but sakura script executes normally**  
 
@@ -213,6 +236,7 @@ On_ShioriEcho.GetName:void {
 }
 On_ShioriEcho {
 	ClearShioriEchoVar
+	reference0 = reference.raw[0]
 	case CUTSPACE(reference0){
 		when 'reload'{
 			ReloadFromTerminal=1
@@ -223,10 +247,36 @@ On_ShioriEcho {
 			ShioriEcho.Result=GETERRORLOG
 		}
 		others{
-			if RE_GREP(reference0,'^\s*help\s+'){
-				ShioriEcho.Special=Get_AYA_Function_Info(RE_REPLACE(reference0,'^\s*help\s+',''))
-				if !ShioriEcho.Special
-					ShioriEcho.Special='Not a system function'
+			if RE_GREP(reference0,'^\s*(help|openfunc)\s+'){
+				if RE_GREP(reference0,'^\s*help\s+'){
+					_funcname=RE_REPLACE(reference0,'^\s*help\s+','')
+					ShioriEcho.Special=Get_AYA_Function_Info(_funcname)
+					if ShioriEcho.Special{
+						'aya's own underlying functions\n'+ShioriEcho.Special+'\n/
+						\q[◇Open online document,OnUrlOpen,'+Get_AYA_Function_Doc(_funcname)+']\n/
+						\q[◇Cancel,Cancel]\n/
+						'
+						--
+						IgnoreChoiceTimeout
+					}
+					else
+						ShioriEcho.Special='Not a system function'
+				}
+				elseif RE_GREP(reference0,'^\s*openfunc\s+'){
+					_funcname=RE_REPLACE(reference0,'^\s*openfunc\s+','')
+					_info=GETFUNCINFO(_funcname)
+					_path=SPLITPATH(_info[0])
+					if _path
+						_path=_path[2]+_path[3]
+					else
+						_path=_info[0]
+					if _info!=-1{
+						OnOpenDicWithLineNum(_info[0],_info[1])
+						ShioriEcho.Special="Open %(_path) line %(_info[1])"
+					}
+					else
+						ShioriEcho.Special='Not a user function'
+				}
 			}
 			else{
 				OnCalculateVar
@@ -238,13 +288,21 @@ On_ShioriEcho {
 }
 On_ShioriEcho.TabPress{
 	_lastname=RE_REPLACE(reference0,'^[\s\S]*[\[\]\(\)\+\-\*\/\=\'+"'"+'\" ]','')
-	_possible_names=(GETVARLIST(_lastname),GETFUNCLIST(_lastname),GETSYSTEMFUNCLIST(_lastname),ARRAY.BeginAs(_lastname,'reload','errorlog'))
+	_possible_names=IARRAY
+	if !reference0[1,' ']
+		_possible_names,=ARRAY.BeginAs(_lastname,'reload','errorlog','openfunc','help')
+	if reference0[0,' '] == 'help'
+		_possible_names=GETSYSTEMFUNCLIST(_lastname)
+	elseif reference0[0,' '] == 'openfunc'
+		_possible_names=GETFUNCLIST(_lastname)
+	else
+		_possible_names,=(GETVARLIST(_lastname),GETFUNCLIST(_lastname),GETSYSTEMFUNCLIST(_lastname))
 	if ARRAYSIZE(_possible_names){
 		_name_after_tab=_possible_names[reference1%ARRAYSIZE(_possible_names)]
 		SHIORI_FW.Make_X_SSTP_PassThru('Command',RE_REPLACE(reference0,_lastname+'$',_name_after_tab))
 	}
 }
-On_ShioriEcho.GetResult:void {
+On_ShioriEcho.GetResult {
 	if ISVAR('ShioriEcho.Special'){
 		SHIORI_FW.Make_X_SSTP_PassThru('Special',ShioriEcho.Special)
 		if !ShioriEcho.Special
