@@ -18,7 +18,7 @@ ghost_terminal.exe -gh ghost_hwnd -c command
 For example:  
 ```bat
 //...
-... \saori\ghost_terminal.exe -g Taromati2 -c reload
+..\saori\ghost_terminal.exe -g Taromati2 -c reload
 @echo on
 ```
 ghost_name can be either the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`  
