@@ -10,10 +10,17 @@
 
 #define floop while(1)
 
+constexpr auto GT_VAR = 10;
+
 using namespace SSTP_link_n;
 using namespace std;
 
 SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
+namespace args_info {
+	wstring ghost_link_to;
+	HWND ghost_hwnd=NULL;
+	wstring command;
+}
 
 wstring&do_transfer(wstring &a) {
 	replace_all(a, L"\\n", L"\n");
@@ -36,20 +43,47 @@ void before_login(){
 		wcout.imbue(locale(""));
 	#endif
 }
-size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
-void putchar_x_time(wchar_t the_char, size_t time);
+extern size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
+extern void putchar_x_time(wchar_t the_char, size_t time);
+void terminal_run(const std::wstring& command);
+void terminal_exit();
+
+
 void terminal_login(){
 	SFMO_t fmobj;
+	using namespace args_info;
+	if (ghost_hwnd)
+		goto link_to_ghost;
 	if (fmobj.Update_info()) {
 		auto ghostnum= fmobj.info_map.size();
-		HWND ghost_hwnd = NULL;
-		if(ghostnum ==1){
-			wcout << "Only one ghost was running.\n";
-			ghost_hwnd=(HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(),nullptr,10);
-		}
-		else if (ghostnum == 0) {
+		if (ghostnum == 0) {
 			wcerr << "None of ghost was running.\n";
 			exit(1);
+		}
+		else if (!ghost_link_to.empty()) {
+			for (auto& i : fmobj.info_map) {
+				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+				if (i.second[L"name"] == ghost_link_to)
+					ghost_hwnd = tmp_hwnd;
+				else {
+					linker.link_to_ghost(tmp_hwnd);
+					auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" },
+												 { L"Reference0", to_wstring(GT_VAR) } });
+
+					if (names[L"GhostName"] == ghost_link_to)
+						ghost_hwnd = tmp_hwnd;
+					else
+						linker.link_to_ghost(NULL);
+				}
+			}
+			if (!ghost_hwnd) {
+				wcerr << "Target ghost: " << ghost_link_to <<L" not found\n";
+				exit(1);
+			}
+		}
+		else if(ghostnum ==1){
+			wcout << "Only one ghost was running.\n";
+			ghost_hwnd=(HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(),nullptr,10);
 		}
 		else {
 			wcout << "Select the ghost you want to log into.[Up/Down/Enter]\n";
@@ -69,7 +103,7 @@ void terminal_login(){
 						exit(0);
 					case WEOF:
 					case 13://enter
-						ghost_hwnd=(HWND)wcstoll(p->second.map[L"hwnd"].c_str(),nullptr,10);
+						ghost_hwnd=(HWND)wcstoll(p->second[L"hwnd"].c_str(),nullptr,10);
 						break;
 					case 9:{//tab
 						p++;
@@ -98,6 +132,7 @@ void terminal_login(){
 				}
 			}
 		}
+	link_to_ghost:
 		#ifdef _DEBUG
 			wcout << "ghost_hwnd: "<< (size_t)ghost_hwnd <<"\n";
 		#endif // _DEBUG
@@ -116,12 +151,20 @@ void terminal_login(){
 			exit(1);
 		}
 	}
-	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" } });
+	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.Begin" },
+								 { L"Reference0", to_wstring(GT_VAR) } });
+
 	wcout << "terminal login\n";
 	if(names.has(L"GhostName"))
 		wcout << "ghost: " << names[L"GhostName"] << '\n';
 	if(names.has(L"UserName"))
 		wcout << "User: " << names[L"UserName"] << '\n';
+
+	if (!command.empty()) {
+		terminal_run(command);
+		terminal_exit();
+		exit(0);
+	}
 }
 wstring terminal_tab_press(const wstring&command,size_t tab_num){
 	auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.TabPress" },
@@ -141,7 +184,11 @@ void terminal_run(const wstring&command){
 				  });
 	floop{
 		auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
-		if(!has_GetResult && Result.get_code()==400){//Bad Request
+		if(Result.get_code()==404){
+			wcerr << L"Lost connection with target ghost\n";
+			exit(1);
+		}
+		else if(!has_GetResult && Result.get_code()==400){//Bad Request
 			wcout << "Event ShioriEcho.GetResult Not define.\n";
 			break;
 		}else
@@ -170,19 +217,26 @@ void terminal_exit(){
 	linker.NOTYFY({ { L"Event", L"ShioriEcho.End" } });
 }
 void terminal_args(size_t argc, std::vector<std::wstring>&argv) {
+	using namespace args_info;
 	if(argc==1)
 		return;
-	if(argv[1]==L"-c"){
-		size_t tmp=1;
-		wstring command;
-		while(tmp++!=argc-1){
-			command+=L' ';
-			command+=argv[tmp];
+	size_t i = 1;
+	while (i < argc) {
+		if (argv[i]==L"-c") {//command
+			i++;
+			if (i < argc)
+				command = argv[i];
 		}
-		command.erase(0,1);
-		terminal_login();
-		terminal_run(command);
-		terminal_exit();
-		exit(0);
+		else if (argv[i] == L"-g") {//ghost
+			i++;
+			if(i < argc)
+				ghost_link_to = argv[i];
+		}
+		else if (argv[i] == L"-gh") {//ghost hwnd
+			i++;
+			if (i < argc)
+				ghost_hwnd = (HWND)wcstoll(argv[i].c_str(), nullptr, 10);
+		}
+		i++;
 	}
 }
