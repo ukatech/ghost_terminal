@@ -151,8 +151,11 @@ void terminal_login(){
 			exit(1);
 		}
 	}
-	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.Begin" },
+	auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" },
 								 { L"Reference0", to_wstring(GT_VAR) } });
+		
+	linker.NOTYFY({ { L"Event", L"ShioriEcho.Begin" },
+					{ L"Reference0", to_wstring(GT_VAR) } });
 
 	wcout << "terminal login\n";
 	if(names.has(L"GhostName"))
