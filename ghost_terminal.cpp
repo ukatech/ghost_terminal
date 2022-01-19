@@ -63,7 +63,7 @@ void terminal_login(){
 		else if (!ghost_link_to.empty()) {
 			for (auto& i : fmobj.info_map) {
 				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-				if (i.second[L"name"] == ghost_link_to)
+				if (i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to)
 					ghost_hwnd = tmp_hwnd;
 				else {
 					linker.link_to_ghost(tmp_hwnd);
