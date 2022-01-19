@@ -20,6 +20,7 @@ namespace args_info {
 	wstring ghost_link_to;
 	HWND ghost_hwnd=NULL;
 	wstring command;
+	wstring sakurascript;
 }
 
 wstring&do_transfer(wstring &a) {
@@ -163,8 +164,17 @@ void terminal_login(){
 	if(names.has(L"UserName"))
 		wcout << "User: " << names[L"UserName"] << '\n';
 
+	bool need_end = 0;
 	if (!command.empty()) {
 		terminal_run(command);
+		need_end = 1;
+	}
+	if(!sakurascript.empty()){
+		linker.SEND({ { L"Script",sakurascript } });
+		need_end = 1;
+	}
+
+	if (need_end) {
 		terminal_exit();
 		exit(0);
 	}
@@ -229,6 +239,11 @@ void terminal_args(size_t argc, std::vector<std::wstring>&argv) {
 			i++;
 			if (i < argc)
 				command = argv[i];
+		}
+		else if (argv[i] == L"-s") {//sakura script
+			i++;
+			if (i < argc)
+				sakurascript = argv[i];
 		}
 		else if (argv[i] == L"-g") {//ghost
 			i++;
