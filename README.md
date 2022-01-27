@@ -14,6 +14,8 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 ghost_terminal.exe -g ghost_name -c command
 # or
 ghost_terminal.exe -gh ghost_hwnd -c command
+# or（Ver11后）
+ghost_terminal.exe [-gh | -g] ghost -s sakura-script
 ```
 比如：  
 ```bat
@@ -21,7 +23,7 @@ ghost_terminal.exe -gh ghost_hwnd -c command
 ..\saori\ghost_terminal.exe -g Taromati2 -c reload
 @echo on
 ```
-ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`  
+ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`，（Ver11后）或descript.txt中的ghost名称  
 
 ### 需求  
 支持`ShioriEcho`、`ShioriEcho.GetResult`的人格  

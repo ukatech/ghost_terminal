@@ -14,6 +14,8 @@ Facilitate ghost development
 ghost_terminal.exe -g ghost_name -c command
 # or
 ghost_terminal.exe -gh ghost_hwnd -c command
+# or (after Ver11)
+ghost_terminal.exe [-gh | -g] ghost -s sakura-script
 ```
 For example:  
 ```bat
@@ -21,7 +23,7 @@ For example:
 ..\saori\ghost_terminal.exe -g Taromati2 -c reload
 @echo on
 ```
-ghost_name can be either the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`  
+ghost_name can be either the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`, (after Ver11) or ghost name in descript.txt  
 
 ### need  
 The ghost support `ShioriEcho` and `ShioriEcho.GetResult`  
