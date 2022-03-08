@@ -21,7 +21,8 @@ namespace args_info {
 	HWND ghost_hwnd=NULL;
 	wstring command;
 	wstring sakurascript;
-}
+}		// namespace args_info
+wstring ghost_uid;
 
 wstring&do_transfer(wstring &a) {
 	replace_all(a, L"\\n", L"\n");
@@ -64,15 +65,21 @@ void terminal_login(){
 		else if (!ghost_link_to.empty()) {
 			for (auto& i : fmobj.info_map) {
 				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-				if (i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to)
+				if(i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to) {
 					ghost_hwnd = tmp_hwnd;
+					ghost_uid  = i.first;
+					break;
+				}
 				else {
 					linker.link_to_ghost(tmp_hwnd);
 					auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" },
 												 { L"Reference0", to_wstring(GT_VAR) } });
 
-					if (names[L"GhostName"] == ghost_link_to)
+					if(names[L"GhostName"] == ghost_link_to) {
 						ghost_hwnd = tmp_hwnd;
+						ghost_uid  = i.first;
+						break;
+					}
 					else
 						linker.link_to_ghost(NULL);
 				}
@@ -144,6 +151,15 @@ void terminal_login(){
 				exit(1);
 			}
 		}
+		if(ghost_uid.empty()) {
+			for(auto& i: fmobj.info_map) {
+				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+				if(ghost_hwnd == tmp_hwnd) {
+					ghost_uid  = i.first;
+					break;
+				}
+			}
+		}
 	}
 	else {
 		wcerr << "Can\'t read FMO info, trying to use socket...\n";
@@ -170,7 +186,7 @@ void terminal_login(){
 		need_end = 1;
 	}
 	if(!sakurascript.empty()){
-		linker.SEND({ { L"Script",sakurascript } });
+		linker.SEND({{L"ID", ghost_uid}, {L"Script", sakurascript}});
 		need_end = 1;
 	}
 
