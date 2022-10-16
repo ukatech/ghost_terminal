@@ -24,7 +24,7 @@ namespace args_info {
 }		// namespace args_info
 wstring ghost_uid;
 
-wstring&do_transfer(wstring &a) {
+wstring&do_transfer(wstring a) {
 	replace_all(a, L"\\n", L"\n");
 	replace_all(a, L"\\\n", L"\\\\n");
 
@@ -56,86 +56,88 @@ void terminal_login(){
 	using namespace args_info;
 	if (ghost_hwnd)
 		goto link_to_ghost;
-	if (fmobj.Update_info()) {
-		auto ghostnum= fmobj.info_map.size();
-		if (ghostnum == 0) {
-			wcerr << "None of ghost was running.\n";
-			exit(1);
-		}
-		else if (!ghost_link_to.empty()) {
-			for (auto& i : fmobj.info_map) {
-				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-				if(i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to) {
-					ghost_hwnd = tmp_hwnd;
-					ghost_uid  = i.first;
-					break;
-				}
-				else {
-					linker.link_to_ghost(tmp_hwnd);
-					auto names = linker.NOTYFY({ { L"Event", L"ShioriEcho.GetName" },
-												 { L"Reference0", to_wstring(GT_VAR) } });
-
-					if(names[L"GhostName"] == ghost_link_to) {
+	if(fmobj.Update_info()) {
+		{
+			auto ghostnum = fmobj.info_map.size();
+			if(ghostnum == 0) {
+				wcerr << "None of ghost was running.\n";
+				exit(1);
+			}
+			else if(!ghost_link_to.empty()) {
+				for(auto& i: fmobj.info_map) {
+					HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+					if(i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to) {
 						ghost_hwnd = tmp_hwnd;
 						ghost_uid  = i.first;
 						break;
 					}
-					else
-						linker.link_to_ghost(NULL);
+					else {
+						linker.link_to_ghost(tmp_hwnd);
+						auto names = linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"},
+													{L"Reference0", to_wstring(GT_VAR)}});
+
+						if(names[L"GhostName"] == ghost_link_to) {
+							ghost_hwnd = tmp_hwnd;
+							ghost_uid  = i.first;
+							break;
+						}
+						else
+							linker.link_to_ghost(NULL);
+					}
+				}
+				if(!ghost_hwnd) {
+					wcerr << "Target ghost: " << ghost_link_to << L" not found\n";
+					exit(1);
 				}
 			}
-			if (!ghost_hwnd) {
-				wcerr << "Target ghost: " << ghost_link_to <<L" not found\n";
-				exit(1);
+			else if(ghostnum == 1) {
+				wcout << "Only one ghost was running.\n";
+				ghost_hwnd = (HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(), nullptr, 10);
 			}
-		}
-		else if(ghostnum ==1){
-			wcout << "Only one ghost was running.\n";
-			ghost_hwnd=(HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(),nullptr,10);
-		}
-		else {
-			wcout << "Select the ghost you want to log into.[Up/Down/Enter]\n";
-			saveCursorPos();
-			auto pbg = fmobj.info_map.begin();
-			auto ped = fmobj.info_map.end();
-			auto p = pbg;
-			while(!ghost_hwnd){
-				wcout << p->second[L"name"];
-				auto c=_getwch();
-				resetCursorPos();
-				auto size = GetStrWide(p->second[L"name"]);
-				putchar_x_time(' ', size);
-				resetCursorPos();
-				switch(c){
-					case 27://esc
+			else {
+				wcout << "Select the ghost you want to log into.[Up/Down/Enter]\n";
+				saveCursorPos();
+				auto pbg = fmobj.info_map.begin();
+				auto ped = fmobj.info_map.end();
+				auto p	 = pbg;
+				while(!ghost_hwnd) {
+					wcout << p->second[L"name"];
+					auto c = _getwch();
+					resetCursorPos();
+					auto size = GetStrWide(p->second[L"name"]);
+					putchar_x_time(' ', size);
+					resetCursorPos();
+					switch(c) {
+					case 27:	   //esc
 						exit(0);
 					case WEOF:
-					case 13://enter
-						ghost_hwnd=(HWND)wcstoll(p->second[L"hwnd"].c_str(),nullptr,10);
+					case 13:	   //enter
+						ghost_hwnd = (HWND)wcstoll(p->second[L"hwnd"].c_str(), nullptr, 10);
 						break;
-					case 9:{//tab
+					case 9: {		//tab
 						p++;
-						if(p==ped)
-							p=pbg;
+						if(p == ped)
+							p = pbg;
 						break;
 					}
-					case 0xE0:{//方向字符先导字符
-						switch(_getwch()){
-						case 72://up
-						case 83://delete
-						case 75://left
-							if(p==pbg)
-								p=ped;
+					case 0xE0: {	   //方向字符先导字符
+						switch(_getwch()) {
+						case 72:	   //up
+						case 83:	   //delete
+						case 75:	   //left
+							if(p == pbg)
+								p = ped;
 							p--;
 							break;
-						case 77://right
-						case 80://down
+						case 77:	   //right
+						case 80:	   //down
 							p++;
-							if(p==ped)
-								p=pbg;
+							if(p == ped)
+								p = pbg;
 							break;
 						}
 						break;
+					}
 					}
 				}
 			}
@@ -196,7 +198,7 @@ void terminal_login(){
 	}
 }
 wstring terminal_tab_press(const wstring&command,size_t tab_num){
-	auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.TabPress" },
+	auto Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.TabPress" },
 								{ L"Reference0", command },
 								{ L"Reference1", to_wstring(tab_num) }
 							});
@@ -212,7 +214,7 @@ void terminal_run(const wstring&command){
 					{ L"Reference0", command }
 				  });
 	floop{
-		auto&Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
+		auto Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
 		if(Result.get_code()==404){
 			wcerr << L"Lost connection with target ghost\n";
 			exit(1);
