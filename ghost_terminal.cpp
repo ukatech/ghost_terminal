@@ -154,13 +154,17 @@ void terminal_login(){
 			}
 		}
 		if(ghost_uid.empty()) {
-			for(auto& i: fmobj.info_map) {
-				HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-				if(ghost_hwnd == tmp_hwnd) {
-					ghost_uid  = i.first;
-					break;
+			if(fmobj.Update_info()) {
+				for(auto& i: fmobj.info_map) {
+					HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+					if(ghost_hwnd == tmp_hwnd) {
+						ghost_uid = i.first;
+						break;
+					}
 				}
 			}
+			if(ghost_uid.empty())
+				wcerr << "Can\'t get ghost_uid, This may result in ShioriEcho not being triggered in newer versions of ssp\n";
 		}
 	}
 	else {
@@ -210,8 +214,9 @@ wstring terminal_tab_press(const wstring&command,size_t tab_num){
 void terminal_run(const wstring&command){
 	if(!linker.Has_Event(L"ShioriEcho"))
 		wcout << "Event Has_Event or ShioriEcho Not define.\n";
-	linker.NOTYFY({ { L"Event", L"ShioriEcho" },
-					{ L"Reference0", command }
+	linker.NOTYFY({ {L"Event", L"ShioriEcho"},
+				    {L"ID", ghost_uid},
+					{L"Reference0", command }
 				  });
 	floop{
 		auto Result=linker.NOTYFY({ { L"Event", L"ShioriEcho.GetResult" } });
