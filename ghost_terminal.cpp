@@ -10,7 +10,7 @@
 
 #define floop while(1)
 
-constexpr auto GT_VAR = 10;
+constexpr auto GT_VAR = 12;
 
 using namespace SSTP_link_n;
 using namespace std;
