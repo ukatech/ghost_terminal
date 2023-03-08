@@ -1,7 +1,6 @@
 ### ghost_terminal  
 ![预览图]( ./preview.png )  
 原试做品，现觉得有点用（  
-基于[SSTP_linker]( https://github.com/Taromati2/SSTP_linker )与[shell_base]( https://github.com/steve02081504/shell_base )  
 
 ### 用法  
 如同系统终端般使用ghost_terminal  

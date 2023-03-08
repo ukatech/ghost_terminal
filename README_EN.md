@@ -1,7 +1,6 @@
 ### ghost_terminal  
 ![Preview]( ./preview.png )  
 The original trial product but now feels a bit useful (  
-Based on [SSTP_linker]( https://github.com/Taromati2/SSTP_linker ) and [shell_base]( https://github.com/steve02081504/shell_base )  
 
 ### Usage  
 Use ghost_terminal like a system terminal  

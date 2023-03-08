@@ -1,6 +1,11 @@
-﻿#include "my-gists/ukagaka/SSTP.hpp"
+﻿#include "my-gists/windows/shell_base.hpp"
+#include "my-gists/windows/EnableVirtualTerminal.hpp"
+
+#include "my-gists/ukagaka/SSTP.hpp"
 #include "my-gists/ukagaka/SFMO.hpp"
+
 #include "my-gists/STL/replace_all.hpp"
+
 #include "my-gists/windows/Cursor.hpp"//saveCursorPos、resetCursorPos
 #include <iostream>
 #ifdef _WIN32
@@ -10,7 +15,7 @@
 
 #define floop while(1)
 
-constexpr auto GT_VAR = 12;
+constexpr auto GT_VAR = 13;
 
 using namespace SSTP_link_n;
 using namespace std;
@@ -24,7 +29,7 @@ namespace args_info {
 }		// namespace args_info
 wstring ghost_uid;
 
-wstring&do_transfer(wstring a) {
+wstring do_transfer(wstring a) {
 	replace_all(a, L"\\n", L"\n");
 	replace_all(a, L"\\\n", L"\\\\n");
 
@@ -44,11 +49,11 @@ void before_login(){
 		wcin.imbue(locale(""));
 		wcout.imbue(locale(""));
 	#endif
+	EnableVirtualTerminal();
 }
+
 extern size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
 extern void putchar_x_time(wchar_t the_char, size_t time);
-void terminal_run(const std::wstring& command);
-void terminal_exit();
 
 
 void terminal_login(){
