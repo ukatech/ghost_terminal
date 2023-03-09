@@ -20,7 +20,11 @@ constexpr auto GT_VAR = 13;
 using namespace SSTP_link_n;
 using namespace std;
 
-SSTP_link_t linker({{L"Charset",L"UTF-8"},{L"Sender",L"Ghost Terminal"}});
+SSTP_link_t linker({
+	{L"Charset",L"UTF-8"},
+	{L"Sender",L"Ghost Terminal"},
+	{L"SecurityLevel",L"local"}
+});
 namespace args_info {
 	wstring ghost_link_to;
 	HWND ghost_hwnd=NULL;
