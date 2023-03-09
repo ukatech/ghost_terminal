@@ -54,7 +54,7 @@ See below for relevant conventions and examples
 	SHIORI/3.0 200 OK
 	Sender: AYA
 	Charset: UTF-8
-	Value: \0\s[0] The execution result of the expression "\_q1000-7\_q" is:\n\_q993\nType: integer\_q\n\q[◇Copy result,OnCopy,"993"] \n\q[◇Copy expression,OnCopy,"1000-7"]\n\q[◇Execute Result as Sakura Script,OnSakuraScript,"993"]\n\n\q[◇Next Evaluation,OnCalculateVar ]\n\q[◇Cancel,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
+	Value: \0\s[0]The execution result of the expression "\_q1000-7\_q" is:\n\_q993\nType: integer\_q\n\q[◇Copy result,OnCopy,"993"] \n\q[◇Copy expression,OnCopy,"1000-7"]\n\q[◇Execute Result as Sakura Script,OnSakuraScript,"993"]\n\n\q[◇Next Evaluation,OnCalculateVar ]\n\q[◇Cancel,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
 	```
 - `ShioriEcho.GetResult`  
   Query evaluation result event  

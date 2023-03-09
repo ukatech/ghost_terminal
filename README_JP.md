@@ -37,7 +37,7 @@ ghost_terminalは`X-SSTP-PassThru-*`（[ドキュメント]( http://ssp.shillest
   * `Reference0`  
 	端末で収集したコマンド  
   * 戻り値  
-	無視する、**sakuraスクリプトは正常に実行される**。 
+	無視する、**sakuraスクリプトは正常に実行される**。  
   * 例  
 	```
 	// request
@@ -113,16 +113,16 @@ ghost_terminalは`X-SSTP-PassThru-*`（[ドキュメント]( http://ssp.shillest
   * 返り値が4である可能性があります。  
 	- **`SHIORI/3.0 400 Bad Request`**  
 	  警告情報を表示し、次のコマンドの取得に入る  
-	  Ver9以降：ゴーストが `ShioriEcho.GetResult` のリクエストに正常に応答した場合、ghost_terminal は `返り値が3である可能性があります` として、そのようなリターンメッセージを無視して1秒待ちます。 
+	  Ver9以降：ゴーストが `ShioriEcho.GetResult` のリクエストに正常に応答した場合、ghost_terminal は `返り値が3である可能性があります` として、そのようなリターンメッセージを無視して1秒待ちます。  
 - `ShioriEcho.GetName`  
   ghost_terminalがゴーストから名前を取得したときのイベント  
   Ver10以前：ghost_terminalが起動したときのイベント  
-  * Reference0` (Ver10以降)  
+  * `Reference0` (Ver10以降)  
 	ターミナルバージョン  
   * 戻り値  
-	- X-SSTP-PassThru-GhostName` (オプション)  
+	- `X-SSTP-PassThru-GhostName` (オプション)  
 	  ゴーストの名前を表示する  
-	- X-SSTP-PassThru-UserName` (オプション)  
+	- `X-SSTP-PassThru-UserName` (オプション)  
 	  ユーザー名を表示する  
   * 例  
 	```
@@ -150,7 +150,7 @@ ghost_terminalは`X-SSTP-PassThru-*`（[ドキュメント]( http://ssp.shillest
   * `Reference1`  
 	ユーザーがタブを連続して数回押した場合（開始値0）  
   * 戻り値  
-	- X-SSTP-PassThru-Command` (オプション)  
+	- `X-SSTP-PassThru-Command` (オプション)  
 	  カーソルの前のコマンドをこの内容に置き換えます。  
   * 例  
 	```
