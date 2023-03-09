@@ -54,7 +54,7 @@ ghost_terminalは`X-SSTP-PassThru-*`（[ドキュメント]( http://ssp.shillest
 	SHIORI/3.0 200 OK
 	Sender: AYA
 	Charset: UTF-8
-	Value: \0\s[0] という式の実行結果は、" \_q1000-7\_q" です：\n\_q993\nタイプ：整数\_q\n\q[◇コピー結果,OnCopy,"993"] \n\q[◇コピー表現について,OnCopy,"1000-7"]\n\q[◇結果をさくらスクリプトとして実行する,OnSakuraScript,"993"]\n\n\q[◇次の評価,OnCalculateVar]\n\q[◇キャンセル,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
+	Value: \0\s[0]という式の実行結果は、"\_q1000-7\_q"です：\n\_q993\nタイプ：整数\_q\n\q[◇コピー結果,OnCopy,"993"] \n\q[◇コピー表現について,OnCopy,"1000-7"]\n\q[◇結果をさくらスクリプトとして実行する,OnSakuraScript,"993"]\n\n\q[◇次の評価,OnCalculateVar]\n\q[◇キャンセル,Cancel]\n\eb25jZSBzbyBkaXNwb3NhYmxl
 	```
 - `ShioriEcho.GetResult`  
   クエリ評価結果イベント  
