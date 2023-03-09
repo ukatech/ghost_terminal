@@ -222,6 +222,11 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   * 返值  
 	忽略，**但言灵正常执行**  
 
+### 虚拟终端序列  
+在Ver13后，任何的输出都将经过虚拟终端序列渲染，而不是普通的文本。  
+参考：[虚拟终端序列](https://learn.microsoft.com/zh-cn/windows/console/console-virtual-terminal-sequences)  
+你可以使用它来控制终端的显示效果，如文字颜色、背景色、字体等。
+
 ### 范例  
 范例代码节选于Taromati2  
 随意修改/复制/使用  

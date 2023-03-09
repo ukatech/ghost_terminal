@@ -222,6 +222,11 @@ See below for relevant conventions and examples
   * Return value  
 	Ignore, **but sakura script executes normally**  
 
+### Virtual Terminal Sequences  
+After Ver13, any output will be rendered by the Virtual Terminal Sequence instead of normal text.  
+Reference: [Virtual Terminal Sequence](https://learn.microsoft.com/en-gb/windows/console/console-virtual-terminal-sequences)  
+You can use it to control the display of the terminal, e.g. text colour, background colour, font, etc.
+
 ### Examples  
 Sample code excerpt from Taromati2  
 Free to modify/copy/use  
