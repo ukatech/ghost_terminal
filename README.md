@@ -1,3 +1,6 @@
+- [JP](./README_JP.md)  
+- [EN](./README_EN.md)  
+
 ### ghost_terminal  
 ![预览图]( ./preview.png )  
 原试做品，现觉得有点用（  
