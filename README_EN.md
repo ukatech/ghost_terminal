@@ -24,6 +24,21 @@ For example:
 ```
 ghost_name can be either the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`, (after Ver11) or ghost name in descript.txt  
 
+### Configure it to [windows terminal](https://github.com/microsoft/terminal)  
+If you have a windows terminal, you can add the ghost terminal to it and the result will be as follows  
+![picture](https://user-images.githubusercontent.com/31927825/232291686-9578650c-972d-47e8-a4d6-f24bb071e6e9.png)  
+![picture](https://user-images.githubusercontent.com/31927825/232291690-6d2c0cc0-2e63-4b41-b67b-cca1b99c9d44.png)  
+Reference configuration information:
+```json
+{
+	"commandline": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\saori\\ghost_terminal.exe -g Taromati2",
+	"guid": "{XXXXXXXX}",
+	"icon": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\img\\ico\\kikka.ico",
+	"name": "Taromati2",
+	"opacity": 80
+}
+```
+
 ### need  
 The ghost support `ShioriEcho` and `ShioriEcho.GetResult`  
 Such as [Taromati2](https://github.com/Taromati2/Taromati2 )  

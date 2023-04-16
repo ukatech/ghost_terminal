@@ -24,6 +24,21 @@ ghost_terminal.exe [-gh | -g] ghost -s sakura-script
 ```
 ghost_name には、さくら（`\0`）側の名前、または `ShioriEcho.GetName` が返す `GhostName` 、（Ver11以降）またはdescript.txtのゴースト名のいずれかを指定できる。  
 
+### [windows terminal](https://github.com/microsoft/terminal)に設定する  
+ウィンドウズターミナルがあれば、そこにゴーストターミナルを追加すると、以下のようになります。 
+![写真](https://user-images.githubusercontent.com/31927825/232291686-9578650c-972d-47e8-a4d6-f24bb071e6e9.png)  
+![写真](https://user-images.githubusercontent.com/31927825/232291690-6d2c0cc0-2e63-4b41-b67b-cca1b99c9d44.png)  
+参考構成情報です：
+```json
+{
+	"commandline": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\saori\\ghost_terminal.exe -g Taromati2",
+	"guid": "{XXXXXXXX}",
+	"icon": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\img\\ico\\kikka.ico",
+	"name": "Taromati2",
+	"opacity": 80
+}
+```
+
 ### 必要なもの 
 ゴーストは `ShioriEcho` と `ShioriEcho.GetResult` をサポートしています。  
 例えば[Taromati2](https://github.com/Taromati2/Taromati2 )など。  
