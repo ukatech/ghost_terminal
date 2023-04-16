@@ -27,6 +27,21 @@ ghost_terminal.exe [-gh | -g] ghost -s sakura-script
 ```
 ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`，（Ver11后）或descript.txt中的ghost名称  
 
+### 将其配置到[windows terminal](https://github.com/microsoft/terminal)  
+如果你有windows terminal，可以将ghost terminal加入其中，效果如下  
+![图片](https://user-images.githubusercontent.com/31927825/232291686-9578650c-972d-47e8-a4d6-f24bb071e6e9.png)  
+![图片](https://user-images.githubusercontent.com/31927825/232291690-6d2c0cc0-2e63-4b41-b67b-cca1b99c9d44.png)  
+参考配置信息：
+```json
+{
+	"commandline": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\saori\\ghost_terminal.exe -g Taromati2",
+	"guid": "{XXXXXXXX}",
+	"icon": "E:\\ssp\\ghost\\Taromati2\\ghost\\master\\img\\ico\\kikka.ico",
+	"name": "Taromati2",
+	"opacity": 80
+}
+```
+
 ### 需求  
 支持`ShioriEcho`、`ShioriEcho.GetResult`的人格  
 如[Taromati2]( https://github.com/Taromati2/Taromati2 )  
