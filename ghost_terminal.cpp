@@ -255,7 +255,7 @@ class ghost_terminal final: public simple_terminal {
 		auto start_ghost = [&] {
 			wcout << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
 			if(ghost_link_to.empty() && ghost_path.empty())		  //?
-				wcerr << CYAN_TEXT("You can use " SET_GREEN "-g" RESET_COLOR " or " SET_GREEN "-gp" RESET_COLOR " to specify the ghost(by name or path).\n");
+				wcerr << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost(by name or path).\n" RESET_COLOR;
 			SSP_Runner SSP;
 			if(!SSP.IsInstalled()) {
 				wcerr << RED_TEXT("SSP is not installed.") << endl;
