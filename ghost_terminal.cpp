@@ -215,43 +215,41 @@ class ghost_terminal final: public simple_terminal {
 #endif
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
+		//判断是否为Windows Terminal
+		//依据为当前进程和WindowsTerminal.exe的进程在同一进程树下
 		{
-			//判断是否为Windows Terminal
-			//依据为当前进程和WindowsTerminal.exe的进程在同一进程树下
-			{
-				auto pid = GetCurrentProcessId();
-				while(pid) {
-					wchar_t buf[MAX_PATH];
-					auto	h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-					if(!h)
-						break;
-					DWORD len = MAX_PATH;
-					if(!QueryFullProcessImageNameW(h, 0, buf, &len)) {
-						CloseHandle(h);
-						break;
-					}
+			auto pid = GetCurrentProcessId();
+			while(pid) {
+				wchar_t buf[MAX_PATH];
+				auto	h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+				if(!h)
+					break;
+				DWORD len = MAX_PATH;
+				if(!QueryFullProcessImageNameW(h, 0, buf, &len)) {
 					CloseHandle(h);
-					if(wcsstr(buf, L"WindowsTerminal.exe")) {
-						is_windows_terminal = 1;
-						break;
-					}
-					PROCESSENTRY32W pe32;
-					pe32.dwSize = sizeof(PROCESSENTRY32W);
-					auto hSnap	= CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-					if(hSnap == INVALID_HANDLE_VALUE)
-						break;
-					if(!Process32FirstW(hSnap, &pe32)) {
-						CloseHandle(hSnap);
-						break;
-					}
-					do {
-						if(pe32.th32ProcessID == pid) {
-							pid = pe32.th32ParentProcessID;
-							break;
-						}
-					} while(Process32NextW(hSnap, &pe32));
-					CloseHandle(hSnap);
+					break;
 				}
+				CloseHandle(h);
+				if(wcsstr(buf, L"WindowsTerminal.exe")) {
+					is_windows_terminal = 1;
+					break;
+				}
+				PROCESSENTRY32W pe32;
+				pe32.dwSize = sizeof(PROCESSENTRY32W);
+				auto hSnap	= CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+				if(hSnap == INVALID_HANDLE_VALUE)
+					break;
+				if(!Process32FirstW(hSnap, &pe32)) {
+					CloseHandle(hSnap);
+					break;
+				}
+				do {
+					if(pe32.th32ProcessID == pid) {
+						pid = pe32.th32ParentProcessID;
+						break;
+					}
+				} while(Process32NextW(hSnap, &pe32));
+				CloseHandle(hSnap);
 			}
 		}
 	}
@@ -296,17 +294,19 @@ class ghost_terminal final: public simple_terminal {
 			wcout << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
 			if(ghost_link_to.empty() && ghost_path.empty())		  //?
 				wcerr << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost (by name or path).\n" RESET_COLOR;
-			SSP_Runner SSP;
-			if(!SSP.IsInstalled()) {
-				wcerr << RED_TEXT("SSP is not installed.") << endl;
-				exit(1);
+			{
+				SSP_Runner SSP;
+				if(!SSP.IsInstalled()) {
+					wcerr << RED_TEXT("SSP is not installed.") << endl;
+					exit(1);
+				}
+				if(ghost_path.empty())
+					SSP.run_ghost(ghost_link_to);
+				else if(ghost_link_to.empty())
+					SSP();
+				else
+					SSP.run_ghost(ghost_path);
 			}
-			if(ghost_path.empty())
-				SSP.run_ghost(ghost_link_to);
-			else if(ghost_link_to.empty())
-				SSP();
-			else
-				SSP.run_ghost(ghost_path);
 			fmobj.Update_info();
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map.size() > 0;
@@ -432,26 +432,29 @@ class ghost_terminal final: public simple_terminal {
 		}
 		waiter([&] {
 			return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
-		},
-			   L"ghost's shiori ready");
+		}, L"ghost's shiori ready");
 
-		auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
-		auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
-									 {L"Reference0", L"" GT_VAR_STR}});
+		{
+			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
+			{
+				auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
+											{L"Reference0", L"" GT_VAR_STR}});
 
-		//set console title
-		wstring title = L"Ghost Terminal";
-		if(result.has(L"Tittle"))
-			title = result[L"Tittle"];
-		else if(!args_info.ghost_link_to.empty())
-			title += L" - " + args_info.ghost_link_to;
-		SetConsoleTitleW(title.c_str());
+				//set console title
+				wstring title = L"Ghost Terminal";
+				if(result.has(L"Tittle"))
+					title = result[L"Tittle"];
+				else if(!args_info.ghost_link_to.empty())
+					title += L" - " + args_info.ghost_link_to;
+				SetConsoleTitleW(title.c_str());
+			}
 
-		wcout << CYAN_TEXT("terminal login\n");
-		if(names.has(L"GhostName"))
-			wcout << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
-		if(names.has(L"UserName"))
-			wcout << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+			wcout << CYAN_TEXT("terminal login\n");
+			if(names.has(L"GhostName"))
+				wcout << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
+			if(names.has(L"UserName"))
+				wcout << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+		}
 
 		bool need_end = 0;
 		if(!command.empty()) {
@@ -550,16 +553,16 @@ class ghost_terminal final: public simple_terminal {
 			simple_terminal::terminal_command_history_new();
 			return;
 		}
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.New"}});
+		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.New"}});
 	}
 	void terminal_command_history_update_last(const std::wstring& command, size_t before_num) {
 		if(!able_command_history) {
 			simple_terminal::terminal_command_history_update(command, before_num);
 			return;
 		}
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Update"},
-									 {L"Reference0", command},
-									 {L"Reference1", to_wstring(before_num)}});
+		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Update"},
+					   {L"Reference0", command},
+					   {L"Reference1", to_wstring(before_num)}});
 	}
 	std::wstring terminal_get_command_history(size_t before_num) {
 		if(!able_command_history) {
@@ -776,7 +779,7 @@ class ghost_terminal final: public simple_terminal {
 					}
 				}
 			}
-			const wstring_view default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
+			constexpr wstring_view default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
 			if(wt_icon.empty())
 				wt_icon = default_icon;
 			auto my_name = argv[0];
