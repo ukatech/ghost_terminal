@@ -141,5 +141,5 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   - `Reference0`
     历史命令的索引（倒序，起始值0）
   - 返值
-    - `X-SSTP-PassThru-Command`（可选）
+    - `X-SSTP-PassThru-Command`（可选）  
       将命令替换为此内容  
