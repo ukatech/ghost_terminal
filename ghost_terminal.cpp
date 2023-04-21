@@ -1,183 +1,43 @@
 ﻿#include "my-gists/windows/shell_base.hpp"
+#include "my-gists/windows/InWindowsTerminal.hpp"
 
 #include "my-gists/ukagaka/SSTP.hpp"
 #include "my-gists/ukagaka/SFMO.hpp"
 #include "my-gists/ukagaka/SSP_Runner.hpp"
+#include "my-gists/ukagaka/ghost_path.hpp"
+#include "my-gists/ukagaka/from_ghost_path.hpp"
 
 #include "my-gists/codepage.hpp"
 #include "my-gists/ansi_color.hpp"
 
 #include "my-gists/STL/replace_all.hpp"
-#include "my-gists/STL/CutSpace.hpp"
-
-#include "my-gists/windows/Cursor.hpp"		 //saveCursorPos、resetCursorPos
+#include "my-gists/STL/to_json_X.hpp"
 
 #include <iostream>
 #ifdef _WIN32
 	#include <fcntl.h>
 	#include <io.h>
 #endif
-#include <shlwapi.h>
-#include <shlobj_core.h>
-#include <rpcdce.h>
-#include <psapi.h>
-#include <tlhelp32.h>
-#include <conio.h>
-//lib of PathFileExists
+#include <shlwapi.h>//PathFileExistsW
+#include <shlobj_core.h>//SHCreateDirectoryEx
+#include <conio.h>//_kbhit
+
+//lib of PathFileExists & SHCreateDirectoryEx
 #pragma comment(lib, "shlwapi.lib")
 
 #define floop while(1)
 
-#define GT_VAR	   13.1
 #define GT_VAR_STR "13.1"
 
 using namespace SSTP_link_n;
 using namespace std;
 
-extern size_t GetStrWide(const wstring& str, size_t begin = 0, size_t end = wstring::npos);
-extern void	  putchar_x_times(wchar_t the_char, size_t time);
-
-string to_string(wstring str) {
-	return CODEPAGE_n::UnicodeToMultiByte(str, CODEPAGE_n::CP_UTF8);
-}
-
-string to_json_string(string str) {
-	replace_all(str, "\\", "\\\\");
-	replace_all(str, "\"", "\\\"");
-	return str;
-}
-
 wstring to_command_path_string(wstring str) {
-	if(str.ends_with('\\'))
+	if(str.ends_with('\\'))// 考虑"path\"，很明显\"会构成转义序列
 		str.pop_back();
 	return str;
 }
 
-string to_json_string(wstring str) {
-	//对每个不在通用字符平面的字符进行转义
-	//\uXXXX
-	string escaped;
-	for (auto& c : str) {
-		if (c < 0x10000) {
-			switch(c) {
-			case L'\\':
-				escaped += "\\\\";
-				break;
-			case L'"':
-				escaped += "\\\"";
-				break;
-			case L'\b':
-				escaped += "\\b";
-				break;
-			case L'\f':
-				escaped += "\\f";
-				break;
-			case L'\n':
-				escaped += "\\n";
-				break;
-			case L'\r':
-				escaped += "\\r";
-				break;
-			case L'\t':
-				escaped += "\\t";
-				break;
-			default:
-				escaped += (char)c;
-			}
-		}
-		else {
-			escaped += "\\u";
-			escaped += ((c >> 12)&0xF)+ '0';
-			escaped += ((c >> 8) &0xF)+ '0';
-			escaped += ((c >> 4) &0xF)+ '0';
-			escaped += ((c >> 0) &0xF)+ '0';
-		}
-	}
-	return escaped;
-}
-
-bool Split(wstring& str, wstring& s0, wstring& s1, wstring_view sepstr) {
-	// strをs0とs1に分解
-	auto begin = str.find(sepstr);
-	s0		   = str.substr(0, begin);
-	s1		   = str.substr(begin + sepstr.size());
-	CutSpace(s0);
-	CutSpace(s1);
-
-	return begin != wstring::npos;
-}
-
-auto get_name_and_icon_path(wstring ghost_path) {
-	auto descript_name = ghost_path + L"ghost\\master\\descript.txt";
-	auto descript_f	   = _wfopen(descript_name.c_str(), L"rb");
-	struct ret_t {
-		wstring name;
-		wstring icon_path;
-	};
-	ret_t aret;
-	//
-	CODEPAGE_n::CODEPAGE cp = CODEPAGE_n::CP_UTF8;
-	char				 buf[2048];
-	wstring				 line, s0, s1;
-	if(descript_f) {
-		while(fgets(buf, 2048, descript_f)) {
-			line	 = CODEPAGE_n::MultiByteToUnicode(buf, cp);
-			auto len = line.size();
-			if(len && *line.rbegin() == L'\n')
-				line.resize(--len);
-			if(len && *line.rbegin() == L'\r')
-				line.resize(--len);
-			Split(line, s0, s1, L",");
-			if(s0 == L"charset")
-				cp = CODEPAGE_n::StringtoCodePage(s1.c_str());
-			else if(s0 == L"icon") {
-				aret.icon_path = ghost_path + L"ghost\\master\\" + s1;
-				if(!PathFileExistsW(aret.icon_path.c_str()))
-					aret.icon_path.clear();
-				if(!aret.name.empty()) {
-					fclose(descript_f);
-					return aret;
-				}
-			}
-			else if(s0 == L"name") {
-				aret.name = s1;
-				if(!aret.icon_path.empty()) {
-					fclose(descript_f);
-					return aret;
-				}
-			}
-		}
-		fclose(descript_f);
-	}
-	return aret;
-}
-wstring get_name(wstring ghost_path) {
-	auto descript_name = ghost_path + L"ghost\\master\\descript.txt";
-	auto descript_f	   = _wfopen(descript_name.c_str(), L"rb");
-	//
-	CODEPAGE_n::CODEPAGE cp = CODEPAGE_n::CP_UTF8;
-	char				 buf[2048];
-	wstring				 line, s0, s1;
-	if(descript_f) {
-		while(fgets(buf, 2048, descript_f)) {
-			line	 = CODEPAGE_n::MultiByteToUnicode(buf, cp);
-			auto len = line.size();
-			if(len && *line.rbegin() == L'\n')
-				line.resize(--len);
-			if(len && *line.rbegin() == L'\r')
-				line.resize(--len);
-			Split(line, s0, s1, L",");
-			if(s0 == L"charset")
-				cp = CODEPAGE_n::StringtoCodePage(s1.c_str());
-			else if(s0 == L"name") {
-				fclose(descript_f);
-				return s1;
-			}
-		}
-		fclose(descript_f);
-	}
-	return {};
-}
 wstring do_transfer(wstring a) {
 	replace_all(a, L"\\n", L"\n");
 	replace_all(a, L"\\\n", L"\\\\n");
@@ -203,7 +63,7 @@ class ghost_terminal final: public simple_terminal {
 	} args_info;
 	wstring ghost_uid;
 
-	bool	is_windows_terminal = 0;
+	bool	is_windows_terminal = InWindowsTerminal();
 	wstring old_title;
 	void	before_terminal_login() override {
 #ifdef _WIN32
@@ -215,43 +75,6 @@ class ghost_terminal final: public simple_terminal {
 #endif
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
-		//判断是否为Windows Terminal
-		//依据为当前进程和WindowsTerminal.exe的进程在同一进程树下
-		{
-			auto pid = GetCurrentProcessId();
-			while(pid) {
-				wchar_t buf[MAX_PATH];
-				auto	h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-				if(!h)
-					break;
-				DWORD len = MAX_PATH;
-				if(!QueryFullProcessImageNameW(h, 0, buf, &len)) {
-					CloseHandle(h);
-					break;
-				}
-				CloseHandle(h);
-				if(wcsstr(buf, L"WindowsTerminal.exe")) {
-					is_windows_terminal = 1;
-					break;
-				}
-				PROCESSENTRY32W pe32;
-				pe32.dwSize = sizeof(PROCESSENTRY32W);
-				auto hSnap	= CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-				if(hSnap == INVALID_HANDLE_VALUE)
-					break;
-				if(!Process32FirstW(hSnap, &pe32)) {
-					CloseHandle(hSnap);
-					break;
-				}
-				do {
-					if(pe32.th32ProcessID == pid) {
-						pid = pe32.th32ParentProcessID;
-						break;
-					}
-				} while(Process32NextW(hSnap, &pe32));
-				CloseHandle(hSnap);
-			}
-		}
 	}
 
 	void terminal_login() override {
@@ -264,7 +87,7 @@ class ghost_terminal final: public simple_terminal {
 		auto&  sakurascript	 = args_info.sakurascript;
 		//处理ghost_path，获得ghost_link_to
 		if(!ghost_path.empty() && ghost_link_to.empty()) {
-			ghost_link_to = get_name(ghost_path);
+			ghost_link_to = from_ghost_path::get_name(ghost_path);
 			if(ghost_link_to.empty()) {
 				wcerr << SET_RED "Can't find ghost name from " SET_BLUE << ghost_path << RESET_COLOR << endl;
 				exit(1);
@@ -673,9 +496,7 @@ class ghost_terminal final: public simple_terminal {
 				else if(argv[i] == L"-gp" || argv[i] == L"--ghost-folder-path") {
 					i++;
 					if(i < argc)
-						ghost_path = argv[i];
-					if(ghost_path.back() != L'\\')
-						ghost_path += L'\\';
+						ghost_path = make_ghost_path(argv[i]);
 				}
 				else if(argv[i] == L"-r" || argv[i] == L"--run-ghost") {	   //run ghost if not running
 					run_ghost = 1;
@@ -738,7 +559,7 @@ class ghost_terminal final: public simple_terminal {
 					for(auto& i: fmobj.info_map) {
 						if(i.second[L"fullname"] != ghost_link_to)
 							continue;
-						ghost_path = i.second[L"ghostpath"];
+						ghost_path = make_ghost_path(i.second[L"ghostpath"]);
 						break;
 					}
 					if(ghost_path.empty())
@@ -748,7 +569,7 @@ class ghost_terminal final: public simple_terminal {
 				}
 			}
 			//处理ghost_path，获得ghost的name 和 icon
-			auto ghost_info = get_name_and_icon_path(ghost_path);
+			auto ghost_info = from_ghost_path::get_name_and_icon_path(ghost_path);
 			if(wt_name.empty())
 				if(ghost_link_to.empty() && ghost_path.empty()) {
 					wcerr << SET_RED "Registering to Windows Terminal requires a ghost name or folder path. Use" SET_GREEN "-g" SET_RED " or " SET_GREEN "-gp" SET_RED " to set it." RESET_COLOR << endl;
@@ -769,7 +590,7 @@ class ghost_terminal final: public simple_terminal {
 			if(wt_icon.empty()) {
 				if(!ghost_path.empty()) {
 					if(ghost_info.icon_path.empty()) {
-						wcerr << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it.\n";
+						wcerr << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it." RESET_COLOR "\n";
 					}
 					else {
 						wchar_t full_path[MAX_PATH];
@@ -815,7 +636,6 @@ class ghost_terminal final: public simple_terminal {
 			//read wt_json as utf-8
 			string wt_json;
 			{
-				//用win api读取文件
 				HANDLE hFile = CreateFileW(wt_json_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 				if(hFile == INVALID_HANDLE_VALUE) {
 					wcerr << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
@@ -852,7 +672,6 @@ class ghost_terminal final: public simple_terminal {
 }
 )+";
 				if(wt_json != new_wt_json) {
-					//win api写文件
 					HANDLE hFile = CreateFileW(wt_json_path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 					if(hFile == INVALID_HANDLE_VALUE) {
 						wcerr << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
