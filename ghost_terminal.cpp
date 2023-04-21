@@ -1,4 +1,5 @@
 ﻿#include "my-gists/windows/shell_base.hpp"
+#include "my-gists/windows/small_io.hpp"
 #include "my-gists/windows/InWindowsTerminal.hpp"
 
 #include "my-gists/ukagaka/SSTP.hpp"
@@ -13,7 +14,8 @@
 #include "my-gists/STL/replace_all.hpp"
 #include "my-gists/STL/to_json_X.hpp"
 
-#include <iostream>
+#include <string>
+#include <string_view>
 #ifdef _WIN32
 	#include <fcntl.h>
 	#include <io.h>
@@ -66,13 +68,8 @@ class ghost_terminal final: public simple_terminal {
 	bool	is_windows_terminal = InWindowsTerminal();
 	wstring old_title;
 	void	before_terminal_login() override {
-#ifdef _WIN32
 		void(_setmode(_fileno(stdout), _O_U16TEXT));
 		void(_setmode(_fileno(stdin), _O_U16TEXT));
-#else
-		wcin.imbue(locale(""));
-		wcout.imbue(locale(""));
-#endif
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
 	}
@@ -89,38 +86,38 @@ class ghost_terminal final: public simple_terminal {
 		if(!ghost_path.empty() && ghost_link_to.empty()) {
 			ghost_link_to = from_ghost_path::get_name(ghost_path);
 			if(ghost_link_to.empty()) {
-				wcerr << SET_RED "Can't find ghost name from " SET_BLUE << ghost_path << RESET_COLOR << endl;
+				err << SET_RED "Can't find ghost name from " SET_BLUE << ghost_path << RESET_COLOR << endline;
 				exit(1);
 			}
 		}
 		auto waiter = [&](auto condition, wstring condition_str, size_t timeout = 30) {
 			if(!condition()) {
-				wcout << LIGHT_YELLOW_OUTPUT("Waiting for " << condition_str << "...") << flush;
+				out << LIGHT_YELLOW_OUTPUT("Waiting for " << condition_str << "...") << flush;
 				terminal::reprinter_t reprinter;
 				size_t				  time = 0;
 				floop {
 					reprinter(L"" YELLOW_TEXT("(" + to_wstring(time) + L'/' + to_wstring(timeout) + L"s)"));
 					Sleep(1000);
 					if(timeout == time) {
-						wcout << endl;
-						wcerr << RED_TEXT("timeout.") << endl;
+						out << endline;
+						err << RED_TEXT("timeout.") << endline;
 						exit(1);
 					}
 					time++;
 					if(condition())
 						break;
 				}
-				wcout << endl;
+				out << endline;
 			}
 		};
 		auto start_ghost = [&] {
-			wcout << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
+			out << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
 			if(ghost_link_to.empty() && ghost_path.empty())		  //?
-				wcerr << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost (by name or path).\n" RESET_COLOR;
+				err << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost (by name or path).\n" RESET_COLOR;
 			{
 				SSP_Runner SSP;
 				if(!SSP.IsInstalled()) {
-					wcerr << RED_TEXT("SSP is not installed.") << endl;
+					err << RED_TEXT("SSP is not installed.") << endline;
 					exit(1);
 				}
 				if(ghost_path.empty())
@@ -151,7 +148,7 @@ class ghost_terminal final: public simple_terminal {
 			{
 				auto ghostnum = fmobj.info_map.size();
 				if(ghostnum == 0) {
-					wcerr << RED_TEXT("None of ghost was running.") << endl;
+					err << RED_TEXT("None of ghost was running.") << endline;
 					if(!run_ghost)
 						exit(1);
 					start_ghost();
@@ -178,16 +175,16 @@ class ghost_terminal final: public simple_terminal {
 						}
 					}
 					if(!ghost_hwnd) {
-						wcerr << SET_RED "Target ghost: " SET_BLUE << ghost_link_to << SET_RED " not found." RESET_COLOR << endl;
+						err << SET_RED "Target ghost: " SET_BLUE << ghost_link_to << SET_RED " not found." RESET_COLOR << endline;
 						exit(1);
 					}
 				}
 				else if(ghostnum == 1) {
-					wcout << GRAY_TEXT("Only one ghost was running.\n");
+					out << GRAY_TEXT("Only one ghost was running.\n");
 					ghost_hwnd = (HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(), nullptr, 10);
 				}
 				else {
-					wcout << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
+					out << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
 					terminal::reprinter_t reprinter;
 					auto				  pbg = fmobj.info_map.begin();
 					auto				  ped = fmobj.info_map.end();
@@ -241,13 +238,13 @@ class ghost_terminal final: public simple_terminal {
 					}
 				}
 				if(ghost_uid.empty()) {
-					wcerr << RED_TEXT("Can\'t get ghost_uid.") << endl;
+					err << RED_TEXT("Can\'t get ghost_uid.") << endline;
 					exit(1);
 				}
 			}
 		}
 		else {
-			wcerr << RED_TEXT("Can\'t read FMO info.") << endl;
+			err << RED_TEXT("Can\'t read FMO info.") << endline;
 			if(!run_ghost)
 				exit(1);
 			start_ghost();
@@ -272,11 +269,11 @@ class ghost_terminal final: public simple_terminal {
 				SetConsoleTitleW(title.c_str());
 			}
 
-			wcout << CYAN_TEXT("terminal login\n");
+			out << CYAN_TEXT("terminal login\n");
 			if(names.has(L"GhostName"))
-				wcout << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
+				out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
 			if(names.has(L"UserName"))
-				wcout << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+				out << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
 		}
 
 		bool need_end = 0;
@@ -293,29 +290,29 @@ class ghost_terminal final: public simple_terminal {
 			exit(0);
 		}
 		if(linker.Has_Event(L"Has_Event")) {
-			wcerr << SET_GRAY;
+			err << SET_GRAY;
 			if(!linker.Has_Event(L"ShioriEcho"))
-				wcerr << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
+				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
 						 "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
 			//ShioriEcho.GetResult
 			if(!linker.Has_Event(L"ShioriEcho.GetResult")) {
 				able_get_result = 0;
-				wcerr << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
+				err << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
 						 "Terminal will not send get result event to your ghost and will not echo result.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandComplete")) {
 				able_command_complete = 0;
-				wcerr << "Event " SET_GREEN "ShioriEcho.CommandComplete" SET_GRAY " Not defined.\n"
+				err << "Event " SET_GREEN "ShioriEcho.CommandComplete" SET_GRAY " Not defined.\n"
 						 "Terminal will not send command complete event to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandUpdate")) {
 				able_command_update = 0;
-				wcerr << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
+				err << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
 						 "Terminal will not send command update event to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Update")) {
 				able_command_history = 0;
-				wcerr << "Your ghost needs to support all of the following events to support command history:\n"
+				err << "Your ghost needs to support all of the following events to support command history:\n"
 						 SET_GREEN
 						 "ShioriEcho.CommandHistory.New\n"
 						 "ShioriEcho.CommandHistory.Get\n"
@@ -325,17 +322,17 @@ class ghost_terminal final: public simple_terminal {
 			}
 			if(!linker.Has_Event(L"ShioriEcho.TabPress")) {
 				able_tab_press = 0;
-				wcerr << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
+				err << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
 						 "Terminal will not send tab press event to your ghost.\n\n";
 			}
-			wcerr << RESET_COLOR;
+			err << RESET_COLOR;
 		}
 		else {
 			able_tab_press		  = 0;
 			able_command_update	  = 0;
 			able_command_complete = 0;
 			able_command_history  = 0;
-			wcerr << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
+			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
 					 "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
 					 "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " and " SET_GREEN "ShioriEcho.GetResult" SET_RED " events." RESET_COLOR "\n\n";
 		}
@@ -422,22 +419,22 @@ class ghost_terminal final: public simple_terminal {
 				floop {
 					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
 					if(Result.get_code() == 404) {
-						wcerr << RED_TEXT("Lost connection with target ghost.") << endl;
+						err << RED_TEXT("Lost connection with target ghost.") << endline;
 						exit(1);
 					}
 					if(Result.has(L"Special")) {
-						wcout << do_transfer(Result[L"Special"]) << endl;
+						out << do_transfer(Result[L"Special"]) << endline;
 						break;
 					}
 					else if(Result.has(L"Result")) {
-						wcout << Result[L"Result"] << endl;
+						out << Result[L"Result"] << endline;
 						if(Result.has(L"Type"))
-							wcout << "Type: " << Result[L"Type"] << endl;
+							out << "Type: " << Result[L"Type"] << endline;
 						break;
 					}
 					else if(Result.has(L"Type")) {
-						wcout << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
-							  << to_ansi_colored_wstring(Result) << endl;
+						out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
+							  << to_ansi_colored_wstring(Result) << endline;
 						break;
 					}
 					else {
@@ -450,7 +447,7 @@ class ghost_terminal final: public simple_terminal {
 				}
 			}
 			catch(const std::exception& a) {
-				cerr << RED_OUTPUT(a.what()) << endl;
+				err << RED_OUTPUT(a.what()) << endline;
 				exit(1);
 			}
 		return true;
@@ -515,7 +512,7 @@ class ghost_terminal final: public simple_terminal {
 						wt_icon = argv[i];
 				}
 				else if(argv[i] == L"-h" || argv[i] == L"--help") {		  //help
-					wcout << LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
+					out << LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
 						  "options:\n"
 						  "  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message.\n"
 						  "  " SET_GREEN "-c" SET_YELLOW "," SET_GREEN " --command " SET_PURPLE "<command>" SET_WHITE "               : " SET_GRAY "runs the specified command " SET_RED "and exits.\n"
@@ -531,7 +528,7 @@ class ghost_terminal final: public simple_terminal {
 					exit(0);
 				}
 				else {
-					wcerr << SET_RED "unknown option: " SET_GRAY << argv[i] << RESET_COLOR << endl;
+					err << SET_RED "unknown option: " SET_GRAY << argv[i] << RESET_COLOR << endline;
 					exit(1);
 				}
 				i++;
@@ -542,11 +539,11 @@ class ghost_terminal final: public simple_terminal {
 			if(!register2wt) {
 				wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 				if(!PathFileExistsW(wt_path.c_str())) {
-					wcout << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
-							 "Download it from <https://aka.ms/terminal> and run this exe with " SET_GREEN "-rwt (-g|-gp)" RESET_COLOR " ." << endl;
+					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
+							 "Download it from <https://aka.ms/terminal> and run this exe with " SET_GREEN "-rwt (-g|-gp)" RESET_COLOR " ." << endline;
 				}
 				else {
-					wcout << SET_GRAY "You can run this exe with " SET_GREEN "-rwt (-g|-gp)" SET_GRAY " for a better experience under Windows Terminal." RESET_COLOR << endl;
+					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt (-g|-gp)" SET_GRAY " for a better experience under Windows Terminal." RESET_COLOR << endline;
 				}
 			}
 		}
@@ -555,34 +552,34 @@ class ghost_terminal final: public simple_terminal {
 			if(ghost_path.empty() && !ghost_link_to.empty()) {
 				SFMO_t fmobj;
 				if(fmobj.Update_info()) {
-					wcout << SET_GRAY "Read FMO info success\n" RESET_COLOR;
+					out << SET_GRAY "Read FMO info success\n" RESET_COLOR;
 					for(auto& i: fmobj.info_map) {
 						if(i.second[L"fullname"] != ghost_link_to)
 							continue;
-						ghost_path = make_ghost_path(i.second[L"ghostpath"]);
+						ghost_path = i.second[L"ghostpath"] + L"ghost\\master\\";
 						break;
 					}
 					if(ghost_path.empty())
-						wcerr << SET_RED "Can't find ghost path by name: " SET_BLUE << ghost_link_to << RESET_COLOR << endl;
+						err << SET_RED "Can't find ghost path by name: " SET_BLUE << ghost_link_to << RESET_COLOR << endline;
 					else
-						wcout << SET_GRAY "Get ghost path by name: " SET_CYAN << ghost_path << RESET_COLOR << endl;
+						out << SET_GRAY "Get ghost path by name: " SET_CYAN << ghost_path << RESET_COLOR << endline;
 				}
 			}
 			//处理ghost_path，获得ghost的name 和 icon
 			auto ghost_info = from_ghost_path::get_name_and_icon_path(ghost_path);
 			if(wt_name.empty())
 				if(ghost_link_to.empty() && ghost_path.empty()) {
-					wcerr << SET_RED "Registering to Windows Terminal requires a ghost name or folder path. Use" SET_GREEN "-g" SET_RED " or " SET_GREEN "-gp" SET_RED " to set it." RESET_COLOR << endl;
+					err << SET_RED "Registering to Windows Terminal requires a ghost name or folder path. Use" SET_GREEN "-g" SET_RED " or " SET_GREEN "-gp" SET_RED " to set it." RESET_COLOR << endline;
 					exit(1);
 				}
 				else {
 					if(ghost_link_to.empty())
 						if(!ghost_info.name.empty()) {
 							ghost_link_to = ghost_info.name;
-							wcout << SET_GRAY "Got ghost name from ghost folder: " SET_BLUE << ghost_link_to << RESET_COLOR << endl;
+							out << SET_GRAY "Got ghost name from ghost folder: " SET_BLUE << ghost_link_to << RESET_COLOR << endline;
 						}
 						else {
-							wcerr << SET_RED "Unable to get ghost name from ghost folder. Use " SET_GREEN "-g" SET_RED " to set it." RESET_COLOR << endl;
+							err << SET_RED "Unable to get ghost name from ghost folder. Use " SET_GREEN "-g" SET_RED " to set it." RESET_COLOR << endline;
 							exit(1);
 						}
 					wt_name = ghost_link_to + L" terminal";
@@ -590,13 +587,13 @@ class ghost_terminal final: public simple_terminal {
 			if(wt_icon.empty()) {
 				if(!ghost_path.empty()) {
 					if(ghost_info.icon_path.empty()) {
-						wcerr << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it." RESET_COLOR "\n";
+						err << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it." RESET_COLOR "\n";
 					}
 					else {
 						wchar_t full_path[MAX_PATH];
 						GetFullPathNameW(ghost_info.icon_path.c_str(), MAX_PATH, full_path, nullptr);
 						wt_icon = full_path;
-						wcout << SET_GRAY "Got ghost icon from ghost folder: " SET_CYAN << wt_icon << RESET_COLOR << endl;
+						out << SET_GRAY "Got ghost icon from ghost folder: " SET_CYAN << wt_icon << RESET_COLOR << endline;
 					}
 				}
 			}
@@ -617,7 +614,7 @@ class ghost_terminal final: public simple_terminal {
 			}
 			//if my path not exist
 			if(!PathFileExistsW(my_name.c_str())) {
-				wcerr << SET_RED "Can't find exe file (" SET_YELLOW << my_name << SET_RED ")\n" RESET_COLOR;
+				err << SET_RED "Can't find exe file (" SET_YELLOW << my_name << SET_RED ")\n" RESET_COLOR;
 				exit(1);
 			}
 			//register to windows terminal
@@ -629,7 +626,7 @@ class ghost_terminal final: public simple_terminal {
 			{
 				auto res = SHCreateDirectoryExW(nullptr, wt_json_dir_path.c_str(), nullptr);
 				if(res != ERROR_SUCCESS && res != ERROR_FILE_EXISTS && res != ERROR_ALREADY_EXISTS) {
-					wcerr << SET_RED "Can't create directory: " SET_CYAN << wt_json_dir_path << RESET_COLOR << endl;
+					err << SET_RED "Can't create directory: " SET_CYAN << wt_json_dir_path << RESET_COLOR << endline;
 					exit(1);
 				}
 			}
@@ -638,18 +635,18 @@ class ghost_terminal final: public simple_terminal {
 			{
 				HANDLE hFile = CreateFileW(wt_json_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 				if(hFile == INVALID_HANDLE_VALUE) {
-					wcerr << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
+					err << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 					exit(1);
 				}
 				DWORD dwFileSize = GetFileSize(hFile, nullptr);
 				if(dwFileSize == INVALID_FILE_SIZE) {
-					wcerr << SET_RED "Can't get file size: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
+					err << SET_RED "Can't get file size: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 					exit(1);
 				}
 				wt_json.resize(dwFileSize);
 				DWORD dwRead;
 				if(!ReadFile(hFile, wt_json.data(), dwFileSize, &dwRead, nullptr)) {
-					wcerr << SET_RED "Can't read file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
+					err << SET_RED "Can't read file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 					exit(1);
 				}
 				CloseHandle(hFile);
@@ -658,8 +655,10 @@ class ghost_terminal final: public simple_terminal {
 				wstring start_command;
 				if(ghost_path.empty())
 					start_command = L'"' + to_command_path_string(my_name) + L"\" -g \"" + ghost_link_to + L"\" -r";
-				else
-					start_command = L'"' + to_command_path_string(my_name) + L"\" -gp \"" + to_command_path_string(ghost_path) + L"\" -r";
+				else {
+					auto simplified_ghost_path = ghost_path.substr(0, ghost_path.size() - 14);//"\\ghost\\master\\"
+					start_command			   = L'"' + to_command_path_string(my_name) + L"\" -gp \"" + simplified_ghost_path + L"\" -r";
+				}
 				string new_wt_json = R"+({
 	"profiles": [
 		{
@@ -674,12 +673,12 @@ class ghost_terminal final: public simple_terminal {
 				if(wt_json != new_wt_json) {
 					HANDLE hFile = CreateFileW(wt_json_path.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 					if(hFile == INVALID_HANDLE_VALUE) {
-						wcerr << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
+						err << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 						exit(1);
 					}
 					DWORD dwWrite;
 					if(!WriteFile(hFile, new_wt_json.data(), new_wt_json.size(), &dwWrite, nullptr)) {
-						wcerr << SET_RED "Can't write file: " SET_CYAN << wt_json_path << RESET_COLOR << endl;
+						err << SET_RED "Can't write file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 						exit(1);
 					}
 					CloseHandle(hFile);
@@ -689,8 +688,8 @@ class ghost_terminal final: public simple_terminal {
 			//wt.exe -p "wt_name"
 			wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 			if(!PathFileExistsW(wt_path.c_str())) {
-				wcerr << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
-						 "You can download it from <https://aka.ms/terminal>." RESET_COLOR << endl;
+				err << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
+						 "You can download it from <https://aka.ms/terminal>." RESET_COLOR << endline;
 			}
 			else {
 				//run wt

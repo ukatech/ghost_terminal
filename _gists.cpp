@@ -1,4 +1,5 @@
 ﻿#include "my-gists/windows/shell_base.cpp"
+#include "my-gists/windows/small_io.cpp"
 #include "my-gists/windows/InWindowsTerminal.cpp"
 
 #include "my-gists/ukagaka/SSTP.cpp"
