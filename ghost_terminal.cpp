@@ -291,37 +291,37 @@ class ghost_terminal final: public simple_terminal {
 			err << SET_GRAY;
 			if(!linker.Has_Event(L"ShioriEcho"))
 				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
-						 "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
+					   "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
 			//ShioriEcho.GetResult
 			if(!linker.Has_Event(L"ShioriEcho.GetResult")) {
 				able_get_result = 0;
 				err << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
-						 "Terminal will not send get result event to your ghost and will not echo result.\n\n";
+					   "Terminal will not send get result event to your ghost and will not echo result.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandComplete")) {
 				able_command_complete = 0;
 				err << "Event " SET_GREEN "ShioriEcho.CommandComplete" SET_GRAY " Not defined.\n"
-						 "Terminal will not send command complete event to your ghost.\n\n";
+					   "Terminal will not send command complete event to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandUpdate")) {
 				able_command_update = 0;
 				err << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
-						 "Terminal will not send command update event to your ghost.\n\n";
+					   "Terminal will not send command update event to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Update")) {
 				able_command_history = 0;
 				err << "Your ghost needs to support all of the following events to support command history:\n"
-						 SET_GREEN
-						 "ShioriEcho.CommandHistory.New\n"
-						 "ShioriEcho.CommandHistory.Get\n"
-						 "ShioriEcho.CommandHistory.Update\n"
-						 SET_GRAY
-						 "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
+					   SET_GREEN
+					   "ShioriEcho.CommandHistory.New\n"
+					   "ShioriEcho.CommandHistory.Get\n"
+					   "ShioriEcho.CommandHistory.Update\n"
+					   SET_GRAY
+					   "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.TabPress")) {
 				able_tab_press = 0;
 				err << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
-						 "Terminal will not send tab press event to your ghost.\n\n";
+					   "Terminal will not send tab press event to your ghost.\n\n";
 			}
 			err << RESET_COLOR;
 		}
@@ -331,8 +331,8 @@ class ghost_terminal final: public simple_terminal {
 			able_command_complete = 0;
 			able_command_history  = 0;
 			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
-					 "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
-					 "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " and " SET_GREEN "ShioriEcho.GetResult" SET_RED " events." RESET_COLOR "\n\n";
+				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
+				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " and " SET_GREEN "ShioriEcho.GetResult" SET_RED " events." RESET_COLOR "\n\n";
 		}
 	}
 
@@ -435,7 +435,7 @@ class ghost_terminal final: public simple_terminal {
 					}
 					else if(Result.has(L"Type")) {
 						out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
-							  << to_ansi_colored_wstring(Result) << endline;
+							<< to_ansi_colored_wstring(Result) << endline;
 						break;
 					}
 					else {
@@ -690,7 +690,7 @@ class ghost_terminal final: public simple_terminal {
 			wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 			if(!PathFileExistsW(wt_path.c_str())) {
 				err << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
-						 "You can download it from <https://aka.ms/terminal>." RESET_COLOR << endline;
+					   "You can download it from <https://aka.ms/terminal>." RESET_COLOR << endline;
 			}
 			else {
 				//run wt
