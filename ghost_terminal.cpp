@@ -68,8 +68,6 @@ class ghost_terminal final: public simple_terminal {
 	bool	is_windows_terminal = InWindowsTerminal();
 	wstring old_title;
 	void	before_terminal_login() override {
-		void(_setmode(_fileno(stdout), _O_U16TEXT));
-		void(_setmode(_fileno(stdin), _O_U16TEXT));
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
 	}
