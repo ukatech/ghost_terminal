@@ -1,36 +1,37 @@
 - [JP](./README_JP.md)  
+- [CN](./README_CN.md)  
 - [EN](./README_EN.md)  
 
 # ghost_terminal  
 
-![预览图]( ./preview.png )  
-原试做品，现觉得有点用（  
+![preview image](./preview.png)  
+Original trial product, now finding it somewhat useful (  
 
-## 用法  
+## Usage  
 
-如同系统终端般使用ghost_terminal  
-up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格支持）  
-键入你的人格所支持的表达式随后对其求值！  
-便于人格开发  
+Use ghost_terminal like a system terminal  
+up/down toggle command, right mouse button for quick paste, supports tab completion (if supported by ghost)  
+Type in the expressions supported by your ghost and then evaluate them!  
+Easy to use for ghost development  
 
-## 命令行参数  
+## Command line arguments  
 
 ```text
 ghost_terminal [options]
-选项：
-  -h, --help                           : 显示此帮助信息。
-  -c, --command <command>              : 运行指定的命令并退出。
-  -s, --sakura-script <script>         : 运行指定的Sakura脚本并退出。
-  -g, --ghost <ghost>                  : 通过名字链接到指定的ghost。
-  -gh, --ghost-hwnd <hwnd>             : 通过HWND链接到指定的ghost。
-  -gp, --ghost-folder-path <path>      : 按文件夹路径链接到指定的ghost。
-  -r, --run-ghost                      : 如果（它/她/他/他们/其他代称）当前没有运行，则运行该ghost。
-  -rwt, --register-to-windows-terminal : 注册到Windows终端（需要 -g <ghost name> 或 -gp <ghost文件夹路径>）。
-        -rwt-name <name>               : 以指定的名字注册到Windows终端（只与-rwt一起工作）。
-        -rwt-icon <icon>               : 用指定的图标（PNG或ICO路径）注册到Windows终端（只适用于-rwt）。
+options:
+  -h, --help                            : shows this help message.
+  -c, --command <command>               : runs the specified command and exits.
+  -s, --sakura-script <script>          : runs the specified Sakura script and exits.
+  -g, --ghost <ghost>                   : links to the specified ghost by name.
+  -gh, --ghost-hwnd <hwnd>              : links to the specified ghost by HWND.
+  -gp, --ghost-folder-path <path>       : links to the specified ghost by folder path.
+  -r, --run-ghost                       : runs the ghost if (it/she/he/them/other pronouns) is not currently running.
+  -rwt, --register-to-windows-terminal  : registers to the Windows terminal (requires -g <ghost name> or -gp <ghost folder path>).
+        -rwt-name <name>                : registers to the Windows terminal with the specified name (only works with -rwt).
+        -rwt-icon <icon>                : registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with -rwt).
 ```
 
-比如：  
+For example:  
 
 ```bat
 //...
@@ -38,111 +39,111 @@ ghost_terminal [options]
 @echo on
 ```
 
-ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`，或descript.txt中的ghost名称  
+ghost_name can be the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`, or the ghost name in descript.txt  
 
-## 事件列表  
+## Event list  
 
-ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[文档]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html )）  
+ghost_terminal communicates information with ghost via `X-SSTP-PassThru-*` (see [documentation]( http://ssp.shillest.net/ukadoc/manual/spec_shiori3.html ))  
 
-### 虚拟终端序列  
+### Virtual terminal sequence  
 
-任何ghost_terminal的输出都将经过虚拟终端序列渲染，而不是普通的文本。  
-参考：[虚拟终端序列](https://learn.microsoft.com/zh-cn/windows/console/console-virtual-terminal-sequences)  
-你可以使用它来控制终端的显示效果，如文字颜色、背景色、字体等。  
+Any ghost_terminal output will be rendered by a virtual terminal sequence, rather than plain text.  
+Reference: [Console Virtual Terminal Sequences](https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences)  
+You can use it to control the display of the terminal, such as text colour, background colour, font, etc.  
 
-### 启动、终止
+### Start/End
 
 - `ShioriEcho.Begin`  
-  ghost_terminal对此ghost启动时事件  
+  ghost_terminal event when this ghost starts  
   - `Reference0`  
-    终端版本  
-  - 返值  
-    - `X-SSTP-PassThru-Tittle`（可选）  
-      设置终端标题  
+    Terminal version  
+  - Return value  
+    - `X-SSTP-PassThru-Tittle` (optional)  
+      Set the terminal title  
 - `ShioriEcho.End`  
-  ghost_terminal正常程序退出时事件  
-  - 返值  
-    忽略，**但言灵正常执行**  
+  ghost_terminal event on normal program exit  
+  - return value  
+    Ignored, **but speech spirits execute normally**  
 - `ShioriEcho.GetName`  
-  ghost_terminal获取名称时事件  
-  - 返值  
-    - `X-SSTP-PassThru-GhostName`（可选）  
-      显示人格名  
-    - `X-SSTP-PassThru-UserName`（可选）  
-      显示用户名  
+  Event when ghost_terminal gets a name  
+  - Return value  
+    - `X-SSTP-PassThru-GhostName` (optional)  
+      Show ghost name  
+    - `X-SSTP-PassThru-UserName` (optional)  
+      Show username  
 
-### 执行命令  
+### Execute the command  
 
 - `ShioriEcho`  
-  命令键入完毕后事件  
+  Event after the command has been typed  
   - `Reference0`  
-    终端所收集到的命令  
-  - 返值  
-    忽略，**但言灵正常执行**  
+    Commands collected by the terminal  
+  - Return value  
+    Ignored, **but sakura scripts are executed normally**  
 - `ShioriEcho.GetResult`  
-  查询求值结果事件  
-  - 可能返值1  
+  Query for value result event  
+  - Possible return value 1  
     - `X-SSTP-PassThru-Result`  
-      显示内容并进入下一命令的获取  
-    - `X-SSTP-PassThru-Type`（可选）  
-      补充信息：值类型  
-  - 可能返值2  
+      Display the content and go to the next command to fetch  
+    - `X-SSTP-PassThru-Type` (optional)  
+      Additional information: value type  
+  - Possible return value 2  
     - `X-SSTP-PassThru-Special`  
-      显示内容并进入下一命令的获取  
-      这个返回值将经过简单转义：  
-      - `\n` 将转换为换行  
-      - `\t` 将转变为制表符  
-      - `\\` 将转化为 `\`  
-  - 可能返值3  
-    - 空  
-      等待1秒后重新发起`ShioriEcho.GetResult`  
-  - 其他
+      Show content and go to the next command fetch  
+      This return value will be simply escaped:  
+      - `\n` will be converted to a newline  
+      - `\t` will be converted to tabs  
+      - `\\` will be converted to `\`  
+  - Possible return value 3  
+    - Empty  
+      Wait 1 second and re-initiate `ShioriEcho.GetResult`  
+  - Other
     - `X-SSTP-PassThru-State`  
-      此返值可叠加在上述返值中  
-      若其为`End`，终端终止  
+      This return value can be superimposed on the above return value  
+      If it is `End`, the terminal terminates  
 
-### 其他  
+### Other  
 
 - `ShioriEcho.TabPress`  
-  命令通过tab补全时事件  
+  command completes the event by tab  
   - `Reference0`  
-    终端所收集到的命令  
+    Commands collected by the terminal  
   - `Reference1`  
-    按下tab时光标所在命令的第几个字符（起始值0）  
+    The first character of the command where the cursor was when the tab was pressed (starting value 0)  
   - `Reference2`  
-    用户连续第几次按下tab（起始值0）  
-  - 返值  
-    - `X-SSTP-PassThru-Command`（可选）  
-      将命令替换为此内容  
-    - `X-SSTP-PassThru-InsertIndex`（可选）  
-      将光标移动到此位置（若不提供则保持不变）  
+    The first consecutive times the user pressed tab (starting value 0)  
+  - Return value  
+    - `X-SSTP-PassThru-Command` (optional)  
+      Replace the command with this content  
+    - `X-SSTP-PassThru-InsertIndex` (optional)  
+      Move the cursor to this position (or leave it unchanged if not provided)  
 - `ShioriEcho.CommandUpdate`  
-  命令更新时事件  
+  Event when command is updated  
   - `Reference0`  
-    终端所收集到的命令  
-  - 返值  
-    - `X-SSTP-PassThru-CommandForDisplay`（可选）  
-      将显示的命令替换为此内容  
-      ghost可以通过此事件实现密码输入时的掩码、正常读入时的语法高亮、以及其他功能  
+    Commands collected by the terminal  
+  - Return value  
+    - `X-SSTP-PassThru-CommandForDisplay` (optional)  
+      Replace the displayed command with this content  
+      ghost can use this event to implement masks on password entry, syntax highlighting on normal reads, and other functions  
 
-### 命令历史  
+### Command History  
 
 - `ShioriEcho.CommandHistory.New`  
-  命令历史末尾新增空命令时事件  
-  - 返值  
-    忽略，**但言灵正常执行**
+  Event when an empty command is added at the end of the command history  
+  - Return value  
+    Ignored, **but sakura scripts are executed normally**
 - `ShioriEcho.CommandHistory.Update`  
-   命令历史更新时事件  
+   Event when command history is updated  
   - `Reference0`  
-    历史命令的内容  
+    The contents of the history command  
   - `Reference1`  
-    历史命令的索引（倒序，起始值0）  
-  - 返值  
-    忽略，**但言灵正常执行**
+    Index of the history command (in reverse order, starting value 0)  
+  - Return value  
+    Ignored, **but sakura scripts are executed normally**
 - `ShioriEcho.CommandHistory.Get`  
-  命令历史获取时事件  
-  - `Reference0`
-    历史命令的索引（倒序，起始值0）
-  - 返值
-    - `X-SSTP-PassThru-Command`（可选）  
-      将命令替换为此内容  
+  Event when command history is fetched  
+  - `Reference0`  
+    Index of the history command (in reverse order, starting value 0)
+  - Return value
+    - `X-SSTP-PassThru-Command` (optional)  
+      Replace the command with this content  
