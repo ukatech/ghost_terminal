@@ -1,3 +1,6 @@
+- [JP](./README_JP.md)  
+- [EN](./README_EN.md)  
+
 # ghost_terminal  
 
 ![预览图]( ./preview.png )  
@@ -14,17 +17,17 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 
 ```text
 ghost_terminal [options]
-options:
-  -h, --help                            : shows this help message.
-  -c, --command <command>               : runs the specified command and exits.
-  -s, --sakura-script <script>          : runs the specified Sakura script and exits.
-  -g, --ghost <ghost>                   : links to the specified ghost by name.
-  -gh, --ghost-hwnd <hwnd>              : links to the specified ghost by HWND.
-  -gp, --ghost-folder-path <path>       : links to the specified ghost by folder path.
-  -r, --run-ghost                       : runs the ghost if (it/she/he/them/other pronouns) is not currently running.
-  -rwt, --register-to-windows-terminal  : registers to the Windows terminal (requires -g <ghost name> or -gp <ghost folder path>).
-        -rwt-name <name>                : registers to the Windows terminal with the specified name (only works with -rwt).
-        -rwt-icon <icon>                : registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with -rwt).
+选项：
+  -h, --help                           : 显示此帮助信息。
+  -c, --command <command>              : 运行指定的命令并退出。
+  -s, --sakura-script <script>         : 运行指定的Sakura脚本并退出。
+  -g, --ghost <ghost>                  : 通过名字链接到指定的ghost。
+  -gh, --ghost-hwnd <hwnd>             : 通过HWND链接到指定的ghost。
+  -gp, --ghost-folder-path <path>      : 按文件夹路径链接到指定的ghost。
+  -r, --run-ghost                      : 如果（它/她/他/他们/其他代称）当前没有运行，则运行该ghost。
+  -rwt, --register-to-windows-terminal : 注册到Windows终端（需要 -g <ghost name> 或 -gp <ghost文件夹路径>）。
+        -rwt-name <name>               : 以指定的名字注册到Windows终端（只与-rwt一起工作）。
+        -rwt-icon <icon>               : 用指定的图标（PNG或ICO路径）注册到Windows终端（只适用于-rwt）。
 ```
 
 比如：  
