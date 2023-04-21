@@ -416,9 +416,12 @@ class ghost_terminal final: public simple_terminal {
 			try {
 				floop {
 					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
-					if(Result.get_code() == 404) {
-						err << RED_TEXT("Lost connection with target ghost.") << endline;
-						exit(1);
+					{
+						const auto code = Result.get_code();
+						if(code == 404||code == -1) {
+							err << RED_TEXT("Lost connection with target ghost.") << endline;
+							exit(1);
+						}
 					}
 					if(Result.has(L"Special")) {
 						out << do_transfer(Result[L"Special"]) << endline;
