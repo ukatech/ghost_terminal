@@ -1,6 +1,7 @@
 ﻿#include "my-gists/windows/shell_base.hpp"
 #include "my-gists/windows/small_io.hpp"
 #include "my-gists/windows/InWindowsTerminal.hpp"
+#include "my-gists/windows/SetIcon.h"
 
 #include "my-gists/ukagaka/SSTP.hpp"
 #include "my-gists/ukagaka/SFMO.hpp"
@@ -67,9 +68,12 @@ class ghost_terminal final: public simple_terminal {
 
 	bool	is_windows_terminal = InWindowsTerminal();
 	wstring old_title;
+	ICON_INFO_t old_icon_info;
 	void	before_terminal_login() override {
+		simple_terminal::before_terminal_login();
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
+		old_icon_info= GetConsoleIcon();
 	}
 
 	void terminal_login() override {
@@ -257,14 +261,35 @@ class ghost_terminal final: public simple_terminal {
 			{
 				auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
 											{L"Reference0", L"" GT_VAR_STR}});
-
-				//set console title
-				wstring title = L"Ghost Terminal";
-				if(result.has(L"Tittle"))
-					title = result[L"Tittle"];
-				else if(!args_info.ghost_link_to.empty())
-					title += L" - " + args_info.ghost_link_to;
-				SetConsoleTitleW(title.c_str());
+				{
+					//set console title
+					wstring title = L"Ghost Terminal";
+					if(result.has(L"Tittle"))
+						title = result[L"Tittle"];
+					else if(!args_info.ghost_link_to.empty())
+						title += L" - " + args_info.ghost_link_to;
+					SetConsoleTitleW(title.c_str());
+				}
+				{
+					ICON_INFO_t icon_info = old_icon_info;
+					if (result.has(L"Icon")) {
+						auto hIcon = from_ghost_path::load_icon(ghost_path,result[L"Icon"]);
+						if (!hIcon)
+							err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
+						else {
+							icon_info.hIcon		 = hIcon;
+							icon_info.hIconSmall = hIcon;
+						}
+					}
+					if (result.has(L"SmallIcon")) {
+						auto hIcon = from_ghost_path::load_icon(ghost_path,result[L"SmallIcon"]);
+						if (!hIcon)
+							err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
+						else
+							icon_info.hIconSmall = hIcon;
+					}
+					SetConsoleIcon(icon_info);
+				}
 			}
 
 			out << CYAN_TEXT("terminal login\n");
@@ -456,6 +481,8 @@ class ghost_terminal final: public simple_terminal {
 	void terminal_exit() override {
 		linker.NOTYFY({{L"Event", L"ShioriEcho.End"}});
 		SetConsoleTitleW(old_title.c_str());
+		SetConsoleIcon(old_icon_info);
+		simple_terminal::terminal_exit();
 	}
 	void terminal_args(size_t argc, std::vector<std::wstring>& argv) override {
 		auto& ghost_path	= args_info.ghost_path;
