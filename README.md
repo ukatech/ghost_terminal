@@ -60,6 +60,11 @@ You can use it to control the display of the terminal, such as text colour, back
   - Return value  
     - `X-SSTP-PassThru-Tittle` (optional)  
       Set the terminal title  
+    - `X-SSTP-PassThru-Icon` (optional)  
+      Set the terminal icon (PNG or ICO path)  
+    - `X-SSTP-PassThru-SmallIcon` (optional)  
+      Set the terminal small icon (PNG or ICO path)  
+      If not set, will be consistent with `X-SSTP-PassThru-Icon`  
 - `ShioriEcho.End`  
   ghost_terminal event on normal program exit  
   - return value  

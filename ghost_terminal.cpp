@@ -30,7 +30,7 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.1"
+#define GT_VAR_STR "13.2"
 
 using namespace SSTP_link_n;
 using namespace std;

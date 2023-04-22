@@ -56,6 +56,11 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   - 返值  
     - `X-SSTP-PassThru-Tittle`（可选）  
       设置终端标题  
+    - `X-SSTP-PassThru-Icon`（可选）  
+      设置终端图标（PNG或ICO路径）  
+    - `X-SSTP-PassThru-SmallIcon`（可选）  
+      设置终端小图标（PNG或ICO路径）  
+      如果不设置，将与`X-SSTP-PassThru-Icon`保持一致  
 - `ShioriEcho.End`  
   ghost_terminal正常程序退出时事件  
   - 返值  

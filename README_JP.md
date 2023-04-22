@@ -58,6 +58,11 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   - 戻り値  
     - `X-SSTP-PassThru-Tittle` (オプション)  
       端末のタイトルを設定する  
+    - `X-SSTP-PassThru-Icon` (オプション)  
+      端末のアイコンを設定する  
+    - `X-SSTP-PassThru-SmallIcon` (オプション)  
+      端末の小さいアイコンを設定する  
+      設定されていない場合、`X-SSTP-PassThru-Icon`と一致する  
 - `ShioriEcho.End`  
   通常のプログラム終了時に発生するghost_terminalイベント  
   - 戻り値  
