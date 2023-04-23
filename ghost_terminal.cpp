@@ -728,7 +728,6 @@ class ghost_terminal final: public simple_terminal {
 	}
 };
 
-int wmain(int argc, wchar_t* argv[]) {
+void wmain(int argc, wchar_t* argv[]) {
 	ghost_terminal{}(argc, argv);
-	return 0;
 }
