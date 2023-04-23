@@ -273,7 +273,7 @@ class ghost_terminal final: public simple_terminal {
 				{
 					ICON_INFO_t icon_info = old_icon_info;
 					if (result.has(L"Icon")) {
-						auto hIcon = from_ghost_path::load_icon(ghost_path,result[L"Icon"]);
+						auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
 						if (!hIcon)
 							err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
 						else {
@@ -282,7 +282,7 @@ class ghost_terminal final: public simple_terminal {
 						}
 					}
 					if (result.has(L"SmallIcon")) {
-						auto hIcon = from_ghost_path::load_icon(ghost_path,result[L"SmallIcon"]);
+						auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
 						if (!hIcon)
 							err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
 						else
