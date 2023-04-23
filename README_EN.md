@@ -64,7 +64,7 @@ You can use it to control the display of the terminal, such as text colour, back
 - `ShioriEcho.End`  
   ghost_terminal event on normal program exit  
   - return value  
-    Ignored, **but speech spirits execute normally**  
+    Ignored, **but sakura spirits execute normally**  
 - `ShioriEcho.GetName`  
   Event when ghost_terminal gets a name  
   - Return value  
