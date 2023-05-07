@@ -113,11 +113,15 @@ You can use it to control the display of the terminal, such as text colour, back
     The first character of the command where the cursor was when the tab was pressed (starting value 0)  
   - `Reference2`  
     The first consecutive times the user pressed tab (starting value 0)  
+  - `Reference3`  
+    The first character of the command in this series of tab complements where the cursor was when the tab was first pressed (starting value 0)  
   - Return value  
     - `X-SSTP-PassThru-Command` (optional)  
       Replace the command with this content  
     - `X-SSTP-PassThru-InsertIndex` (optional)  
       Move the cursor to this position (or leave it unchanged if not provided)  
+    - `X-SSTP-PassThru-OldInsertIndex` (optional)  
+      Update the subsequent `Reference3` to this content, valid until the end of the series of tab completions (or leave it unchanged if not provided)  
 - `ShioriEcho.CommandUpdate`  
   Event when command is updated  
   - `Reference0`  
