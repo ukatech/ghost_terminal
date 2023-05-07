@@ -30,7 +30,7 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.2"
+#define GT_VAR_STR "13.3"
 
 using namespace SSTP_link_n;
 using namespace std;
@@ -421,16 +421,22 @@ class ghost_terminal final: public simple_terminal {
 	editting_command_t terminal_tab_press(const editting_command_t& command, size_t tab_num) override {
 		if(!able_tab_press)
 			return command;
+		static size_t last_old_insert_index = 0;
+		if(!tab_num)
+			last_old_insert_index = command.insert_index;
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.TabPress"},
 									 {L"Reference0", command.command},
 									 {L"Reference1", to_wstring(command.insert_index)},
-									 {L"Reference2", to_wstring(tab_num)}});
+									 {L"Reference2", to_wstring(tab_num)},
+									 {L"Reference3", to_wstring(last_old_insert_index)}});
 
 		editting_command_t Result_command = command;
 		if(Result.has(L"Command"))
 			Result_command.command = Result[L"Command"];
 		if(Result.has(L"InsertIndex"))
 			Result_command.insert_index = stoull(Result[L"InsertIndex"]);
+		if(Result.has(L"OldInsertIndex"))
+			last_old_insert_index = stoull(Result[L"OldInsertIndex"]);
 		return Result_command;
 	}
 	bool terminal_run(const wstring& command) override {
@@ -662,22 +668,17 @@ class ghost_terminal final: public simple_terminal {
 			string wt_json;
 			{
 				HANDLE hFile = CreateFileW(wt_json_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-				if(hFile == INVALID_HANDLE_VALUE) {
-					err << SET_RED "Can't open file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
-					exit(1);
+				if(hFile != INVALID_HANDLE_VALUE) {
+					const DWORD dwFileSize = GetFileSize(hFile, nullptr);
+					if(dwFileSize != INVALID_FILE_SIZE) {
+						wt_json.resize(dwFileSize);
+						DWORD dwRead;
+						if(!ReadFile(hFile, wt_json.data(), dwFileSize, &dwRead, nullptr)) {
+							err << SET_RED "Can't read file: " SET_CYAN << wt_json_path << SET_RED ", overwriting it." RESET_COLOR << endline;
+						}
+					}
+					CloseHandle(hFile);
 				}
-				DWORD dwFileSize = GetFileSize(hFile, nullptr);
-				if(dwFileSize == INVALID_FILE_SIZE) {
-					err << SET_RED "Can't get file size: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
-					exit(1);
-				}
-				wt_json.resize(dwFileSize);
-				DWORD dwRead;
-				if(!ReadFile(hFile, wt_json.data(), dwFileSize, &dwRead, nullptr)) {
-					err << SET_RED "Can't read file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
-					exit(1);
-				}
-				CloseHandle(hFile);
 			}
 			{
 				wstring start_command;
