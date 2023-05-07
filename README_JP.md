@@ -115,11 +115,15 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     タブを押したときにカーソルがあったコマンドの最初の文字（開始値0）。  
   - `Reference2`  
     ユーザーが最初に連続してタブを押した回数（開始値0）  
+  - `Reference3`  
+    この一連のタブ補完の中で、最初にタブを押したときにカーソルがあったコマンドの最初の文字（開始値0）。  
   - 戻り値  
     - `X-SSTP-PassThru-Command` (オプション)  
       コマンドをこの内容で置き換える  
     - `X-SSTP-PassThru-InsertIndex` (オプション)  
       カーソルをこの位置に移動させる（提供されない場合は変更しない）  
+    - `X-SSTP-PassThru-OldInsertIndex`（オプション）  
+      後続の `Reference3` をこの内容に更新し、この一連のタブコンプリートが終了するまで有効とする（提供されない場合は変更しない）  
 - `ShioriEcho.CommandUpdate`  
   コマンド更新時のイベント  
   - `Reference0`  

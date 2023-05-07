@@ -113,11 +113,15 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
     按下tab时光标所在命令的第几个字符（起始值0）  
   - `Reference2`  
     用户连续第几次按下tab（起始值0）  
+  - `Reference3`  
+    这一系列tab补全中初次按下tab时光标所在命令的第几个字符（起始值0）  
   - 返值  
     - `X-SSTP-PassThru-Command`（可选）  
       将命令替换为此内容  
     - `X-SSTP-PassThru-InsertIndex`（可选）  
       将光标移动到此位置（若不提供则保持不变）  
+    - `X-SSTP-PassThru-OldInsertIndex`（可选）  
+      将后续的`Reference3`更新为此内容，有效性直到这一系列的tab补全结束（若不提供则保持不变）  
 - `ShioriEcho.CommandUpdate`  
   命令更新时事件  
   - `Reference0`  
