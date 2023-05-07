@@ -1,6 +1,7 @@
 ﻿#include "my-gists/windows/shell_base.hpp"
 #include "my-gists/windows/small_io.hpp"
 #include "my-gists/windows/InWindowsTerminal.hpp"
+#include "my-gists/windows/IsElevated.hpp"
 #include "my-gists/windows/SetIcon.h"
 
 #include "my-gists/ukagaka/SSTP.hpp"
@@ -17,6 +18,7 @@
 
 #include <string>
 #include <string_view>
+#include <ranges>
 #ifdef _WIN32
 	#include <fcntl.h>
 	#include <io.h>
@@ -30,12 +32,12 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.3"
+#define GT_VAR_STR "13.4"
 
 using namespace SSTP_link_n;
 using namespace std;
 
-wstring to_command_path_string(wstring str) {
+wstring to_command_path_string(wstring str)noexcept {
 	if(str.ends_with('\\'))// 考虑"path\"，很明显\"会构成转义序列
 		str.pop_back();
 	return str;
@@ -63,10 +65,18 @@ class ghost_terminal final: public simple_terminal {
 		HWND	ghost_hwnd = NULL;
 		wstring command;
 		wstring sakurascript;
+		bool	register2wt = 0;
+
+		bool disable_root_text = 0;
+		bool disable_event_text = 0;
+		bool disable_WindowsTerminal_text = 0;
+		bool disable_FiraCode_text = 0;
 	} args_info;
 	wstring ghost_uid;
 
 	bool	is_windows_terminal = InWindowsTerminal();
+	bool	fira_code_font_found = 0;
+	wstring LOCALAPPDATA;
 	wstring old_title;
 	ICON_INFO_t old_icon_info;
 	void	before_terminal_login() override {
@@ -74,16 +84,24 @@ class ghost_terminal final: public simple_terminal {
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
 		old_icon_info= GetConsoleIcon();
+		LOCALAPPDATA = _wgetenv(L"LOCALAPPDATA");
 	}
 
 	void terminal_login() override {
 		SFMO_t fmobj;
 		auto&  ghost_link_to = args_info.ghost_link_to;
 		auto&  ghost_path	 = args_info.ghost_path;
-		auto&  run_ghost	 = args_info.run_ghost;
+		const auto&  run_ghost	 = args_info.run_ghost;
 		auto&  ghost_hwnd	 = args_info.ghost_hwnd;
-		auto&  command		 = args_info.command;
-		auto&  sakurascript	 = args_info.sakurascript;
+		const auto&  command		 = args_info.command;
+		const auto&  sakurascript	 = args_info.sakurascript;
+		const auto&  register2wt	 = args_info.register2wt;
+		//disables
+		const auto& disable_root_text			 = args_info.disable_root_text;
+		const auto&	disable_event_text			 = args_info.disable_event_text;
+		const auto&	disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
+		const auto&	disable_FiraCode_text		 = args_info.disable_FiraCode_text;
+
 		//处理ghost_path，获得ghost_link_to
 		if(!ghost_path.empty() && ghost_link_to.empty()) {
 			ghost_link_to = from_ghost_path::get_name(ghost_path);
@@ -141,14 +159,14 @@ class ghost_terminal final: public simple_terminal {
 							if(i.second[L"fullname"] == ghost_link_to)
 								return ghost_hwnd = tmp_hwnd;
 						}
-					return HWND(0);
+					return HWND{0};
 				}, L"ghost hwnd created");
 		};
 		if(ghost_hwnd)
 			goto link_to_ghost;
 		if(fmobj.Update_info()) {
 			{
-				auto ghostnum = fmobj.info_map.size();
+				const auto ghostnum = fmobj.info_map.size();
 				if(ghostnum == 0) {
 					err << RED_TEXT("None of ghost was running.") << endline;
 					if(!run_ghost)
@@ -188,8 +206,8 @@ class ghost_terminal final: public simple_terminal {
 				else {
 					out << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
 					terminal::reprinter_t reprinter;
-					auto				  pbg = fmobj.info_map.begin();
-					auto				  ped = fmobj.info_map.end();
+					const auto			  pbg = fmobj.info_map.begin();
+					const auto			  ped = fmobj.info_map.end();
 					auto				  p	  = pbg;
 					while(!ghost_hwnd) {
 						reprinter(p->second[L"name"]);
@@ -232,7 +250,7 @@ class ghost_terminal final: public simple_terminal {
 			if(ghost_uid.empty()) {
 				if(fmobj.Update_info()) {
 					for(auto& i: fmobj.info_map) {
-						HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+						const HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
 						if(ghost_hwnd == tmp_hwnd) {
 							ghost_uid = i.first;
 							break;
@@ -256,47 +274,74 @@ class ghost_terminal final: public simple_terminal {
 			return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
 		}, L"ghost's shiori ready");
 
+		if(!is_windows_terminal && !disable_WindowsTerminal_text) {
+			if(!register2wt) {
+				wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
+				if(!PathFileExistsW(wt_path.c_str()))
+					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
+									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR << endline;
+				else
+					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ") for a better experience under Windows Terminal." RESET_COLOR << endline;
+			}
+		}
+		if(!disable_FiraCode_text){
+			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
+			//如果找不到，就提示一下
+			LOGFONTW lf;
+			lf.lfCharSet = DEFAULT_CHARSET;
+			lf.lfFaceName[0] = L'\0';
+			HDC hdc = GetDC(NULL);
+			if(hdc){
+				EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
+				ReleaseDC(NULL, hdc);
+			}
+			if(!fira_code_font_found)
+				out << SET_GRAY "You can use " SET_GREEN "Fira Code" SET_GRAY " font for a better experience in terminal and editor.\n"
+					   "Try it from <" UNDERLINE_TEXT("https://github.com/tonsky/FiraCode") "> !" RESET_COLOR << endline;
+		}
 		{
 			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
+			auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
+										{L"Reference0", L"" GT_VAR_STR}});
 			{
-				auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
-											{L"Reference0", L"" GT_VAR_STR}});
-				{
-					//set console title
-					wstring title = L"Ghost Terminal";
-					if(result.has(L"Tittle"))
-						title = result[L"Tittle"];
-					else if(!args_info.ghost_link_to.empty())
-						title += L" - " + args_info.ghost_link_to;
-					SetConsoleTitleW(title.c_str());
-				}
-				{
-					ICON_INFO_t icon_info = old_icon_info;
-					if (result.has(L"Icon")) {
-						auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
-						if (!hIcon)
-							err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
-						else {
-							icon_info.hIcon		 = hIcon;
-							icon_info.hIconSmall = hIcon;
-						}
+				//set console title
+				wstring title = L"Ghost Terminal";
+				if(result.has(L"Tittle"))
+					title = result[L"Tittle"];
+				else if(!args_info.ghost_link_to.empty())
+					title += L" - " + args_info.ghost_link_to;
+				SetConsoleTitleW(title.c_str());
+			}
+			{
+				ICON_INFO_t icon_info = old_icon_info;
+				if (result.has(L"Icon")) {
+					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
+					if (!hIcon)
+						err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
+					else {
+						icon_info.hIcon		 = hIcon;
+						icon_info.hIconSmall = hIcon;
 					}
-					if (result.has(L"SmallIcon")) {
-						auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
-						if (!hIcon)
-							err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
-						else
-							icon_info.hIconSmall = hIcon;
-					}
-					SetConsoleIcon(icon_info);
 				}
+				if (result.has(L"SmallIcon")) {
+					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
+					if (!hIcon)
+						err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
+					else
+						icon_info.hIconSmall = hIcon;
+				}
+				SetConsoleIcon(icon_info);
 			}
 
-			out << CYAN_TEXT("terminal login\n");
-			if(names.has(L"GhostName"))
-				out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
-			if(names.has(L"UserName"))
-				out << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+			if(result.has(L"CustomLoginInfo"))
+				out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
+			else{
+				out << CYAN_TEXT("terminal login\n");
+				if(names.has(L"GhostName"))
+					out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
+				if(names.has(L"UserName"))
+					out << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+			}
 		}
 
 		bool need_end = 0;
@@ -312,9 +357,18 @@ class ghost_terminal final: public simple_terminal {
 			terminal_exit();
 			exit(0);
 		}
+		if(!disable_root_text && IsElevated())
+			out << SET_GRAY "Coooool, You're running terminal with " BOLD_TEXT(UNDERLINE_TEXT("root") " access") "!\n"
+				   "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
+				   "It will just run as it always does.\n\n" RESET_COLOR;
 		if(linker.Has_Event(L"Has_Event")) {
+			auto&err=[&]()->base_out_t&{
+				if(disable_event_text)
+					return nullstream;
+				return::err;
+			}();
 			err << SET_GRAY;
-			if(!linker.Has_Event(L"ShioriEcho"))
+			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))//在disable_event_text时完全可以不检查ShioriEcho
 				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
 					   "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
 			//ShioriEcho.GetResult
@@ -378,7 +432,7 @@ class ghost_terminal final: public simple_terminal {
 		if(Result.has(L"Command"))
 			Result_command.command = Result[L"Command"];
 		if(Result.has(L"InsertIndex"))
-			Result_command.insert_index = stoull(Result[L"InsertIndex"]);
+			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
 		return Result_command;
 	}
 	std::wstring terminal_command_update(std::wstring command) {
@@ -434,9 +488,9 @@ class ghost_terminal final: public simple_terminal {
 		if(Result.has(L"Command"))
 			Result_command.command = Result[L"Command"];
 		if(Result.has(L"InsertIndex"))
-			Result_command.insert_index = stoull(Result[L"InsertIndex"]);
+			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
 		if(Result.has(L"OldInsertIndex"))
-			last_old_insert_index = stoull(Result[L"OldInsertIndex"]);
+			last_old_insert_index = (size_t)stoull(Result[L"OldInsertIndex"]);
 		return Result_command;
 	}
 	bool terminal_run(const wstring& command) override {
@@ -497,8 +551,13 @@ class ghost_terminal final: public simple_terminal {
 		auto& ghost_hwnd	= args_info.ghost_hwnd;
 		auto& command		= args_info.command;
 		auto& sakurascript	= args_info.sakurascript;
+		auto&  register2wt	= args_info.register2wt;
+		//disables
+		auto& disable_root_text			   = args_info.disable_root_text;
+		auto& disable_event_text		   = args_info.disable_event_text;
+		auto& disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
+		auto& disable_FiraCode_text		   = args_info.disable_FiraCode_text;
 
-		bool	register2wt = 0;
 		wstring wt_name;
 		wstring wt_icon;
 		if(argc != 1) {
@@ -545,10 +604,33 @@ class ghost_terminal final: public simple_terminal {
 					if(i < argc)
 						wt_icon = argv[i];
 				}
+				else if(argv[i] == L"--disable-text"){
+					i++;
+					const wstring&disable_text = argv[i];
+					if(disable_text==L"all")
+						disable_root_text=disable_event_text=disable_WindowsTerminal_text=disable_FiraCode_text=true;
+					else
+						//for each disable text split by ','
+						for(const auto& word: views::split(disable_text, L',')) {
+							const wstring_view disable_text{word.begin(), word.end()};
+							if(disable_text == L"root")
+								disable_root_text = true;
+							else if(disable_text == L"event")
+								disable_event_text = true;
+							else if(disable_text == L"WindowsTerminal")
+								disable_WindowsTerminal_text = true;
+							else if(disable_text == L"FiraCode")
+								disable_FiraCode_text = true;
+							else if(disable_text.size())
+								err << SET_GRAY "Ignore unknown disable text: " << SET_PURPLE << disable_text << RESET_COLOR << endline;
+						}
+				}
 				else if(argv[i] == L"-h" || argv[i] == L"--help") {		  //help
-					out << LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
+					out <<"ghost terminal v" GT_VAR_STR "\n\n"<<
+						  LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
 						  "options:\n"
-						  "  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message.\n"
+						  "  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message " SET_RED "and exits.\n"
+						  "  " SET_GREEN "-v" SET_YELLOW "," SET_GREEN " --version" SET_WHITE "                         : " SET_GRAY "shows the version number " SET_RED "and exits.\n"
 						  "  " SET_GREEN "-c" SET_YELLOW "," SET_GREEN " --command " SET_PURPLE "<command>" SET_WHITE "               : " SET_GRAY "runs the specified command " SET_RED "and exits.\n"
 						  "  " SET_GREEN "-s" SET_YELLOW "," SET_GREEN " --sakura-script " SET_PURPLE "<script>" SET_WHITE "          : " SET_GRAY "runs the specified Sakura script " SET_RED "and exits.\n"
 						  "  " SET_GREEN "-g" SET_YELLOW "," SET_GREEN " --ghost " SET_PURPLE "<ghost>" SET_WHITE "                   : " SET_GRAY "links to the specified ghost by name.\n"
@@ -558,7 +640,19 @@ class ghost_terminal final: public simple_terminal {
 						  "  " SET_GREEN "-rwt" SET_YELLOW "," SET_GREEN " --register-to-windows-terminal" SET_WHITE "  : " SET_GRAY "registers to the Windows terminal (requires " SET_GREEN "-g" SET_PURPLE " <ghost name>" SET_GRAY " or " SET_GREEN "-gp" SET_PURPLE " <ghost folder path>" SET_GRAY ").\n"
 						  "        " SET_GREEN "-rwt-name " SET_PURPLE "<name>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified name (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
 						  "        " SET_GREEN "-rwt-icon " SET_PURPLE "<icon>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
+						  "  " SET_GREEN "--disable-text " SET_PURPLE "<text types>" SET_GRAY "|" SET_PURPLE "all" SET_WHITE "       : " SET_GRAY "disable some unnecessary text(split by '" SET_PURPLE "," SET_GRAY "') or all of them.\n"
+						  "        " SET_PURPLE "root" SET_WHITE "                            : " SET_GRAY "disables the " BLINK_TEXT("easter egg") " text when running terminal as root.\n"
+						  "        " SET_PURPLE "event" SET_WHITE "                           : " SET_GRAY "disables the warning text when your ghost not having some events.\n"
+						  "        " SET_PURPLE "WindowsTerminal" SET_WHITE "                 : " SET_GRAY "disables the text telling you to install " UNDERLINE_TEXT("Windows Terminal") " or run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ").\n"
+						  "        " SET_PURPLE "FiraCode" SET_WHITE "                        : " SET_GRAY "disables the text telling you try " UNDERLINE_TEXT("Fira Code") " font.\n"
+						  RESET_COLOR
+						  "example:\n"
+						  "  " SET_LIGHT_YELLOW "ghost-terminal " SET_GREEN "-g " SET_PURPLE "\"Taromati2\" " SET_GREEN "-rwt --disable-text " SET_PURPLE "event,WindowsTerminal,FiraCode" RESET_COLOR "\n"
 						  RESET_COLOR;
+					exit(0);
+				}
+				else if(argv[i] == L"-v" || argv[i] == L"--version"){
+					out << SET_GRAY "ghost terminal v" GT_VAR_STR "\n" RESET_COLOR;
 					exit(0);
 				}
 				else {
@@ -566,19 +660,6 @@ class ghost_terminal final: public simple_terminal {
 					exit(1);
 				}
 				i++;
-			}
-		}
-		wstring LOCALAPPDATA = _wgetenv(L"LOCALAPPDATA");
-		if(!is_windows_terminal) {
-			if(!register2wt) {
-				wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
-				if(!PathFileExistsW(wt_path.c_str())) {
-					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
-							 "Download it from <https://aka.ms/terminal> and run this exe with " SET_GREEN "-rwt (-g|-gp)" RESET_COLOR " ." << endline;
-				}
-				else {
-					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt (-g|-gp)" SET_GRAY " for a better experience under Windows Terminal." RESET_COLOR << endline;
-				}
 			}
 		}
 		if(register2wt) {
@@ -618,23 +699,20 @@ class ghost_terminal final: public simple_terminal {
 						}
 					wt_name = ghost_link_to + L" terminal";
 				}
-			if(wt_icon.empty()) {
-				if(!ghost_path.empty()) {
-					if(ghost_info.icon_path.empty()) {
-						err << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it." RESET_COLOR "\n";
-					}
+			if(wt_icon.empty())
+				if(!ghost_path.empty())
+					if(ghost_info.icon_path.empty())
+						err << SET_RED "Can't get ghost icon from ghost folder. Use " SET_GREEN "-rwt-icon" SET_RED " to set it." RESET_COLOR << endline;
 					else {
 						wchar_t full_path[MAX_PATH];
 						GetFullPathNameW(ghost_info.icon_path.c_str(), MAX_PATH, full_path, nullptr);
 						wt_icon = full_path;
 						out << SET_GRAY "Got ghost icon from ghost folder: " SET_CYAN << wt_icon << RESET_COLOR << endline;
 					}
-				}
-			}
 			constexpr wstring_view default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
 			if(wt_icon.empty())
 				wt_icon = default_icon;
-			auto my_name = argv[0];
+			auto&my_name = argv[0];
 			{
 				//update my name to full path
 				wchar_t full_path[MAX_PATH];
@@ -658,7 +736,7 @@ class ghost_terminal final: public simple_terminal {
 			wstring wt_json_path = wt_json_dir_path + ghost_link_to + L".json";
 			//创建文件夹和文件（并递归父文件夹直到成功）
 			{
-				auto res = SHCreateDirectoryExW(nullptr, wt_json_dir_path.c_str(), nullptr);
+				const auto res = SHCreateDirectoryExW(nullptr, wt_json_dir_path.c_str(), nullptr);
 				if(res != ERROR_SUCCESS && res != ERROR_FILE_EXISTS && res != ERROR_ALREADY_EXISTS) {
 					err << SET_RED "Can't create directory: " SET_CYAN << wt_json_dir_path << RESET_COLOR << endline;
 					exit(1);
@@ -687,6 +765,18 @@ class ghost_terminal final: public simple_terminal {
 				else {
 					auto simplified_ghost_path = ghost_path.substr(0, ghost_path.size() - 14);//"\\ghost\\master\\"
 					start_command			   = L'"' + to_command_path_string(my_name) + L"\" -gp \"" + simplified_ghost_path + L"\" -r";
+				}
+				if(disable_root_text | disable_event_text | disable_WindowsTerminal_text | disable_FiraCode_text) {
+						start_command += L" --disable-text ";
+					if(disable_root_text)
+						start_command += L"root,";
+					if(disable_event_text)
+						start_command += L"event,";
+					if(disable_WindowsTerminal_text)
+						start_command += L"WindowsTerminal,";
+					if(disable_FiraCode_text)
+						start_command += L"FiraCode,";
+					start_command.pop_back();
 				}
 				string new_wt_json = R"+({
 	"profiles": [
@@ -718,7 +808,7 @@ class ghost_terminal final: public simple_terminal {
 			wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 			if(!PathFileExistsW(wt_path.c_str())) {
 				err << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
-					   "You can download it from <https://aka.ms/terminal>." RESET_COLOR << endline;
+					   "You can download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") ">." RESET_COLOR << endline;
 			}
 			else {
 				//run wt
@@ -727,8 +817,17 @@ class ghost_terminal final: public simple_terminal {
 			}
 		}
 	}
+	static int CALLBACK FiraCode_Finder(const LOGFONTW *lpelfe, const TEXTMETRICW *lpntme, DWORD FontType, LPARAM lParam)noexcept{
+		auto& self=*(ghost_terminal*)lParam;
+		const wstring_view font_name=lpelfe->lfFaceName;
+		if(font_name.find(L"Fira Code")==0) {
+			self.fira_code_font_found=true;
+			return 0;//stop enum
+		}
+		return 1;
+	}
 };
 
-void wmain(int argc, wchar_t* argv[]) {
-	ghost_terminal{}(argc, argv);
+int wmain(int argc, wchar_t* argv[]) {
+	return ghost_terminal{}(argc, argv),0;
 }
