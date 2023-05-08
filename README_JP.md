@@ -15,9 +15,12 @@ ghost_terminalをシステム端末のように使用する
 テキスト
 
 ```text
+ghost terminal v13.4
+
 ghost_terminal [オプション]を指定します。
 オプションで指定します。
-  -h, --help                           : ヘルプメッセージを表示する．
+  -h, --help                           : ヘルプメッセージを表示し、終了する。
+  -v, --version                        : はバージョン番号を表示し、終了する。
   -c, --command <command>              : 指定されたコマンドを実行し、終了する。
   -s, --sakura-script <script>         : 指定されたサクラスクリプトを実行し、終了する。
   -g, --ghost <ghost>                  : 指定されたゴーストに名前でリンクする。
@@ -27,6 +30,13 @@ ghost_terminal [オプション]を指定します。
   -rwt, --register-to-windows-terminal : Windows端末に登録する（-g <ghost name> または -gp <ghost folder path> が必要）．
         -rwt-name <name>               : 指定された名前のWindows端末に登録する（-rwtとの組み合わせでのみ動作）。
         -rwt-icon <icon>               : 指定されたアイコン（PNGまたはICOのパス）でWindows端末に登録します（-rwtとの組み合わせのみ）。
+  --disable-text <text types>|all      : 不要なテキスト（','で分割されたもの）またはそのすべてを無効にする。
+        root                           : は、rootでterminalを実行したときのイースターエッグテキストを無効にします。
+        event                          : ゴーストのイベントがないときの警告文を表示しないようにします。
+        WindowsTerminal                : Windows Terminalをインストールするか、このexeを-rwt (-g|-gp)で実行するように指示するテキストを無効化します。
+        FiraCode                       : Fira Codeフォントを試していることを示すテキストを表示しないようにします。
+example:
+  ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
 
 例えば、こんな感じです：  
@@ -63,6 +73,12 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     - `X-SSTP-PassThru-SmallIcon` (オプション)  
       端末の小さいアイコンを設定する  
       設定されていない場合、`X-SSTP-PassThru-Icon`と一致する  
+    - `X-SSTP-PassThru-CustomLoginInfo` (optional)  
+      設定された場合、端末はデフォルトのログイン情報を表示せず、この  
+      この戻り値は、単純にエスケープされます：  
+      - `\n` は改行に変換されます。  
+      - `\t` はタブに変換されます。  
+      - `\\` は `\` に変換される。  
 - `ShioriEcho.End`  
   通常のプログラム終了時に発生するghost_terminalイベント  
   - 戻り値  

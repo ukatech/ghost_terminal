@@ -17,9 +17,12 @@ Easy to use for ghost development
 ## Command line arguments  
 
 ```text
+ghost terminal v13.4
+
 ghost_terminal [options]
 options:
-  -h, --help                            : shows this help message.
+  -h, --help                            : shows this help message and exits.
+  -v, --version                         : shows the version number and exits.
   -c, --command <command>               : runs the specified command and exits.
   -s, --sakura-script <script>          : runs the specified Sakura script and exits.
   -g, --ghost <ghost>                   : links to the specified ghost by name.
@@ -29,6 +32,13 @@ options:
   -rwt, --register-to-windows-terminal  : registers to the Windows terminal (requires -g <ghost name> or -gp <ghost folder path>).
         -rwt-name <name>                : registers to the Windows terminal with the specified name (only works with -rwt).
         -rwt-icon <icon>                : registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with -rwt).
+  --disable-text <text types>|all       : disable some unnecessary text(split by ',') or all of them.
+        root                            : disables the easter egg text when running terminal as root.
+        event                           : disables the warning text when your ghost not having some events.
+        WindowsTerminal                 : disables the text telling you to install Windows Terminal or run this exe with -rwt (-g|-gp).
+        FiraCode                        : disables the text telling you try Fira Code font.
+example:
+  ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
 
 For example:  
@@ -65,6 +75,12 @@ You can use it to control the display of the terminal, such as text colour, back
     - `X-SSTP-PassThru-SmallIcon` (optional)  
       Set the terminal small icon (PNG or ICO path)  
       If not set, will be consistent with `X-SSTP-PassThru-Icon`  
+    - `X-SSTP-PassThru-CustomLoginInfo` (optional)  
+      If set, the terminal will not display the default login information, but will display the content of this  
+      This return value will be simply escaped:  
+      - `\n` will be converted to a newline  
+      - `\t` will be converted to tabs  
+      - `\\` will be converted to `\`  
 - `ShioriEcho.End`  
   ghost_terminal event on normal program exit  
   - return value  

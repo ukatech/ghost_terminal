@@ -13,9 +13,12 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 ## 命令行参数  
 
 ```text
+ghost terminal v13.4
+
 ghost_terminal [options]
 选项：
-  -h, --help                           : 显示此帮助信息。
+  -h, --help                           : 显示此帮助信息并退出。
+  -v, --version                        : shows the version number and exits.
   -c, --command <command>              : 运行指定的命令并退出。
   -s, --sakura-script <script>         : 运行指定的Sakura脚本并退出。
   -g, --ghost <ghost>                  : 通过名字链接到指定的ghost。
@@ -25,6 +28,13 @@ ghost_terminal [options]
   -rwt, --register-to-windows-terminal : 注册到Windows终端（需要 -g <ghost name> 或 -gp <ghost文件夹路径>）。
         -rwt-name <name>               : 以指定的名字注册到Windows终端（只与-rwt一起工作）。
         -rwt-icon <icon>               : 用指定的图标（PNG或ICO路径）注册到Windows终端（只适用于-rwt）。
+  --disable-text <text types>|all      : disable some unnecessary text(split by ',') or all of them.
+        root                           : disables the easter egg text when running terminal as root.
+        event                          : disables the warning text when your ghost not having some events.
+        WindowsTerminal                : disables the text telling you to install Windows Terminal or run this exe with -rwt (-g|-gp).
+        FiraCode                       : disables the text telling you try Fira Code font.
+example:
+  ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
 
 比如：  
@@ -61,6 +71,12 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
     - `X-SSTP-PassThru-SmallIcon`（可选）  
       设置终端小图标（PNG或ICO路径）  
       如果不设置，将与`X-SSTP-PassThru-Icon`保持一致  
+    - `X-SSTP-PassThru-CustomLoginInfo`（可选）
+      如果设置了，终端将不显示默认的登录信息，但会显示这个的内容。  
+      这个返回值将经过简单转义：  
+      - `\n` 将转换为换行  
+      - `\t` 将转变为制表符  
+      - `\\` 将转化为 `\`  
 - `ShioriEcho.End`  
   ghost_terminal正常程序退出时事件  
   - 返值  
