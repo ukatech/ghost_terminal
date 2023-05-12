@@ -32,7 +32,7 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.4"
+#define GT_VAR_STR "13.5"
 
 using namespace SSTP_link_n;
 using namespace std;
@@ -387,13 +387,15 @@ class ghost_terminal final: public simple_terminal {
 				err << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
 					   "Terminal will not send command update event to your ghost.\n\n";
 			}
-			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Update")) {
+			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") ||
+			   !linker.Has_Event(L"ShioriEcho.CommandHistory.Update") || !linker.Has_Event(L"ShioriEcho.CommandHistory.NextIndex")) {
 				able_command_history = 0;
 				err << "Your ghost needs to support all of the following events to support command history:\n"
 					   SET_GREEN
 					   "ShioriEcho.CommandHistory.New\n"
 					   "ShioriEcho.CommandHistory.Get\n"
 					   "ShioriEcho.CommandHistory.Update\n"
+					   "ShioriEcho.CommandHistory.NextIndex\n"
 					   SET_GRAY
 					   "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
 			}
@@ -402,6 +404,11 @@ class ghost_terminal final: public simple_terminal {
 				err << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
 					   "Terminal will not send tab press event to your ghost.\n\n";
 			}
+			if(!linker.Has_Event(L"ShioriEcho.CommandPrompt")) {
+				able_command_prompt = 0;
+				err << "Event " SET_GREEN "ShioriEcho.CommandPrompt" SET_GRAY " Not defined.\n"
+					   "Terminal will not send command prompt event to your ghost.\n\n";
+			}
 			err << RESET_COLOR;
 		}
 		else {
@@ -409,6 +416,7 @@ class ghost_terminal final: public simple_terminal {
 			able_command_update	  = 0;
 			able_command_complete = 0;
 			able_command_history  = 0;
+			able_command_prompt   = 0;
 			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
 				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
 				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " and " SET_GREEN "ShioriEcho.GetResult" SET_RED " events." RESET_COLOR "\n\n";
@@ -420,7 +428,16 @@ class ghost_terminal final: public simple_terminal {
 	bool able_command_update   = 1;
 	bool able_command_complete = 1;
 	bool able_command_history  = 1;
+	bool able_command_prompt   = 1;
 
+
+	std::wstring terminal_command_prompt(){
+		if(!able_command_prompt)
+			return simple_terminal::terminal_command_prompt();
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandPrompt"}});
+		if(Result.has(L"Prompt"))
+			return Result[L"Prompt"];
+	}
 	editting_command_t terminal_command_complete_by_right(const editting_command_t& command) {
 		if(!able_command_complete)
 			return command;
@@ -460,6 +477,19 @@ class ghost_terminal final: public simple_terminal {
 		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Update"},
 					   {L"Reference0", command},
 					   {L"Reference1", to_wstring(before_num)}});
+	}
+	bool terminal_command_history_next(size_t& index) {
+		if(!able_command_history)
+			return simple_terminal::terminal_command_history_next(index);
+
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.NextIndex"},
+									 {L"Reference0", to_wstring(index)}});
+		if(Result.has(L"Index")) {
+			index = (size_t)stoull(Result[L"Index"]);
+			return true;
+		}
+		else
+			return false;
 	}
 	std::wstring terminal_get_command_history(size_t before_num) {
 		if(!able_command_history) {
