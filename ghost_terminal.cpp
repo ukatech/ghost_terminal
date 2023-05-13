@@ -32,7 +32,7 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.5"
+#define GT_VAR_STR "13.6"
 
 using namespace SSTP_link_n;
 using namespace std;
@@ -416,10 +416,11 @@ class ghost_terminal final: public simple_terminal {
 			able_command_update	  = 0;
 			able_command_complete = 0;
 			able_command_history  = 0;
-			able_command_prompt   = 0;
+			able_command_prompt	  = 0;
+			able_get_result		  = 0;
 			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
 				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
-				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " and " SET_GREEN "ShioriEcho.GetResult" SET_RED " events." RESET_COLOR "\n\n";
+				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " event." RESET_COLOR "\n\n";
 		}
 	}
 
@@ -453,8 +454,17 @@ class ghost_terminal final: public simple_terminal {
 		return Result_command;
 	}
 	std::wstring terminal_command_update(std::wstring command) {
-		if(!able_command_update || _kbhit())	   //考虑到sstp极慢的速度，只在需要时更新command的色彩
+		if(!able_command_update)
 			return command;
+		{
+			bool in_kbhit = _kbhit();
+			if(in_kbhit) {		 //考虑到sstp极慢的速度，只在需要时更新command的色彩
+				const auto next_ch = _getwch();
+				_ungetwch(next_ch);
+				if(next_ch != L'\n' && next_ch != L'\r')
+					return command;
+			}
+		}
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandUpdate"},
 									 {L"Reference0", command}});
 		if(Result.has(L"CommandForDisplay"))
@@ -557,8 +567,11 @@ class ghost_terminal final: public simple_terminal {
 						Sleep(1000);
 					}
 					if(Result.has(L"Status")) {
-						if(Result[L"Status"] == L"End")
+						const auto& status = Result[L"Status"];
+						if(status == L"End")
 							return false;
+						else if(status == L"Continue")
+							break;
 					}
 				}
 			}
