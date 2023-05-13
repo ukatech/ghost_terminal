@@ -44,13 +44,13 @@ wstring to_command_path_string(wstring str)noexcept {
 }
 
 wstring do_transfer(wstring a) {
-	replace_all(a, L"\\n", L"\n");
-	replace_all(a, L"\\\n", L"\\\\n");
+	replace_all(a, L"\\n"sv, L"\n"sv);
+	replace_all(a, L"\\\n"sv, L"\\\\n"sv);
 
-	replace_all(a, L"\\t", L"\t");
-	replace_all(a, L"\\\t", L"\\\\t");
+	replace_all(a, L"\\t"sv, L"\t"sv);
+	replace_all(a, L"\\\t"sv, L"\\\\t"sv);
 
-	replace_all(a, L"\\\\", L"\\");
+	replace_all(a, L"\\\\"sv, L"\\"sv);
 	return a;
 }
 
@@ -739,7 +739,7 @@ class ghost_terminal final: public simple_terminal {
 						wt_icon = full_path;
 						out << SET_GRAY "Got ghost icon from ghost folder: " SET_CYAN << wt_icon << RESET_COLOR << endline;
 					}
-			constexpr wstring_view default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
+			constexpr auto default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png"sv;
 			if(wt_icon.empty())
 				wt_icon = default_icon;
 			auto&my_name = argv[0];
