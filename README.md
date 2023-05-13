@@ -128,6 +128,7 @@ The rest of the events should only be defined if you want to change the default 
     - `X-SSTP-PassThru-State`  
       This return value can be superimposed on the above return value  
       If it is `End`, the terminal terminates  
+      If it is `Continue`, the terminal does not display any content and goes to the next command acquisition  
 
 ### Other  
 

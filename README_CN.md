@@ -124,6 +124,7 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
     - `X-SSTP-PassThru-State`  
       此返值可叠加在上述返值中  
       若其为`End`，终端终止  
+      若其为`Continue`，终端不显示任何内容并进入下一命令的获取  
 
 ### 其他  
 
