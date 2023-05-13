@@ -148,6 +148,24 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     - `X-SSTP-PassThru-CommandForDisplay` (オプション)  
       表示されているコマンドをこの内容に置き換えます。  
       ゴーストはこのイベントを利用して、パスワード入力時のマスク、通常読み上げ時のシンタックスハイライトなどの機能を実装することができます。  
+- `ShioriEcho.CommandPrompt`  
+  コマンドプロンプトが更新されたときのイベント  
+  - 戻り値  
+    - X-SSTP-PassThru-Prompt` (オプション)  
+      表示されているコマンドプロンプトをこの内容で置き換える  
+      ゴーストはこのイベントでコマンドプロンプトを動的に変更することができます。  
+- `ShioriEcho.CommandComplete`  
+  ユーザーがコマンドラインの右端にある `→` を押したときのイベント  
+  - `Reference0`  
+    端末が収集したコマンド  
+  - `Reference1`  
+    カーソルがある位置で `→` を押したときのコマンドの最初の文字（開始値は0）。  
+  - 戻り値  
+    - `X-SSTP-PassThru-Command` (オプション)  
+      コマンドをこの内容で置き換える  
+      ゴーストは、このイベントでコマンドをオートコンプリートすることができます。  
+    - `X-SSTP-PassThru-InsertIndex` (オプション)  
+      カーソルをこの位置に移動させる（提供されない場合はそのままにする）  
 
 ### コマンド履歴  
 
@@ -163,10 +181,17 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     履歴コマンドのインデックス（逆順、開始値0）  
   - 戻り値  
     無視される、**ただし、sakura scriptは正常に実行される**。
-- `ShioriEcho.CommandHistory.Get` の略です。  
+- `ShioriEcho.CommandHistory.Get`  
   コマンドヒストリーを取得したときのイベント  
   - `Reference0`  
     履歴コマンドのインデックス（逆順、開始値0）
   - 戻り値
     - `X-SSTP-PassThru-Command` (オプション)  
       コマンドをこの内容で置き換える  
+- `ShioriEcho.CommandHistory.NextIndex`  
+  ユーザが `↑` を押したときにインデックスが更新されるときのイベント  
+  - `Reference0`
+    履歴コマンドのインデックス（逆順、開始値0）  
+  - 戻り値
+    - `X-SSTP-PassThru-Index` (オプション)  
+      インデックスをこの値に更新する  

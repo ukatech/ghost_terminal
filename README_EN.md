@@ -146,6 +146,24 @@ You can use it to control the display of the terminal, such as text colour, back
     - `X-SSTP-PassThru-CommandForDisplay` (optional)  
       Replace the displayed command with this content  
       ghost can use this event to implement masks on password entry, syntax highlighting on normal reads, and other functions  
+- `ShioriEcho.CommandPrompt`  
+  Events when the command prompt is updated  
+  - Return value  
+    - `X-SSTP-PassThru-Prompt` (optional)  
+      Replace the displayed command prompt with this content  
+      ghost can implement dynamic changes to the command prompt with this event  
+- `ShioriEcho.CommandComplete`  
+  Event when the user presses `→` at the far right of the command line  
+  - `Reference0`  
+    Commands collected by the terminal  
+  - `Reference1`  
+    The first character of the command where the cursor was when `→` was pressed (starting value 0)  
+  - Return value  
+    - `X-SSTP-PassThru-Command` (optional)  
+      Replace the command with this content  
+      ghost can auto-complete commands with this event  
+    - `X-SSTP-PassThru-InsertIndex` (optional)  
+      Move the cursor to this position (or leave it unchanged if not provided)  
 
 ### Command History  
 
@@ -168,3 +186,10 @@ You can use it to control the display of the terminal, such as text colour, back
   - Return value
     - `X-SSTP-PassThru-Command` (optional)  
       Replace the command with this content  
+- `ShioriEcho.CommandHistory.NextIndex`  
+  Event when the index is updated when the user presses `↑`  
+  - `Reference0`
+    Index of the history command (in reverse order, starting value 0)  
+  - Return value
+    - `X-SSTP-PassThru-Index` (optional)  
+      Update the index to this value  

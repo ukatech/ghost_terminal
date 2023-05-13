@@ -146,6 +146,24 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
     - `X-SSTP-PassThru-CommandForDisplay`（可选）  
       将显示的命令替换为此内容  
       ghost可以通过此事件实现密码输入时的掩码、正常读入时的语法高亮、以及其他功能  
+- `ShioriEcho.CommandPrompt`  
+  命令提示符更新时事件  
+  - 返值  
+    - `X-SSTP-PassThru-Prompt`（可选）  
+      将显示的命令提示符替换为此内容  
+      ghost可以通过此事件实现命令提示符的动态变化  
+- `ShioriEcho.CommandComplete`  
+  用户于命令行最右端按下`→`时事件  
+  - `Reference0`  
+    终端所收集到的命令  
+  - `Reference1`  
+    按下`→`时光标所在命令的第几个字符（起始值0）  
+  - 返值  
+    - `X-SSTP-PassThru-Command`（可选）  
+      将命令替换为此内容  
+      ghost可以通过此事件实现命令的自动补全  
+    - `X-SSTP-PassThru-InsertIndex`（可选）  
+      将光标移动到此位置（若不提供则保持不变）  
 
 ### 命令历史  
 
@@ -164,7 +182,14 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 - `ShioriEcho.CommandHistory.Get`  
   命令历史获取时事件  
   - `Reference0`
-    历史命令的索引（倒序，起始值0）
+    历史命令的索引（倒序，起始值0）  
   - 返值
     - `X-SSTP-PassThru-Command`（可选）  
       将命令替换为此内容  
+- `ShioriEcho.CommandHistory.NextIndex`  
+  用户按压`↑`时更新索引时事件  
+  - `Reference0`
+    历史命令的索引（倒序，起始值0）  
+  - 返值
+    - `X-SSTP-PassThru-Index`（可选）  
+      将索引更新为此数值  
