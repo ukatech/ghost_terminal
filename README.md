@@ -61,6 +61,12 @@ Any ghost_terminal output will be rendered by a virtual terminal sequence, rathe
 Reference: [Console Virtual Terminal Sequences](https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences)  
 You can use it to control the display of the terminal, such as text colour, background colour, font, etc.  
 
+### Default behaviour  
+
+Most of the events in the following events will use the default behaviour if not implemented by ghost  
+In other words, **if you want your ghost to support terminal, you only need to implement the `ShioriEcho` event.**  
+The rest of the events should only be defined if you want to change the default behaviour or provide a richer experience  
+
 ### Start/End
 
 - `ShioriEcho.Begin`  

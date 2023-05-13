@@ -57,6 +57,12 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 参考：[虚拟终端序列](https://learn.microsoft.com/zh-cn/windows/console/console-virtual-terminal-sequences)  
 你可以使用它来控制终端的显示效果，如文字颜色、背景色、字体等。  
 
+### 默认行为  
+
+在以下事件中大多数事件如果ghost没有实现，terminal将使用默认行为  
+换言之，**如果你想你的ghost支持terminal，你只需要实现`ShioriEcho`事件即可**  
+其余事件只在你想要更改默认行为或者提供更为丰富的体验时才需要进行定义  
+
 ### 启动、终止
 
 - `ShioriEcho.Begin`  
