@@ -1,0 +1,53 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+
+IDI_SMALL               ICON                    "icon/icon.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VERSION_NUMS
+ PRODUCTVERSION VERSION_NUMS
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "FileDescription", "ghost terminal for every ghost!"
+            VALUE "FileVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2)
+            VALUE "OriginalFilename", "ghost_terminal.exe"
+            VALUE "ProductVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2)
+            VALUE "ProductName", "ghost terminal"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+#endif

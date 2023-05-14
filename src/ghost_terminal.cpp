@@ -29,7 +29,7 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.7"
+#include "Version.h"
 
 using namespace SSTP_link_n;
 using namespace std;
@@ -301,8 +301,17 @@ class ghost_terminal final: public simple_terminal {
 		}
 		{
 			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
-			auto result = linker.NOTYFY({{L"Event", L"ShioriEcho.Begin"},
-										{L"Reference0", L"" GT_VAR_STR}});
+			auto result = linker.NOTYFY({
+											{L"Event", L"ShioriEcho.Begin"},
+											{L"Reference0", L"" VERSION_STRING},
+											{L"Reference1", [&]{//mode
+												if(!command.empty())
+													return L"Command";
+												if(!sakurascript.empty())
+													return L"SakuraScript";
+												return L"Common";
+											}()},
+										});
 			{
 				//set console title
 				wstring title = L"Ghost Terminal";
@@ -610,26 +619,46 @@ class ghost_terminal final: public simple_terminal {
 					i++;
 					if(i < argc)
 						command = argv[i];
+					else{
+						err << RED_OUTPUT("No command after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 				}
 				else if(argv[i] == L"-s" || argv[i] == L"--sakura-script") {	   //sakura script
 					i++;
 					if(i < argc)
 						sakurascript = argv[i];
+					else{
+						err << RED_OUTPUT("No sakura script after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 				}
 				else if(argv[i] == L"-g" || argv[i] == L"--ghost") {	   //ghost
 					i++;
 					if(i < argc)
 						ghost_link_to = argv[i];
+					else{
+						err << RED_OUTPUT("No ghost name after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 				}
 				else if(argv[i] == L"-gh" || argv[i] == L"--ghost-hwnd") {		 //ghost hwnd
 					i++;
 					if(i < argc)
 						ghost_hwnd = (HWND)wcstoll(argv[i].c_str(), nullptr, 10);
+					else{
+						err << RED_OUTPUT("No ghost hwnd after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 				}
 				else if(argv[i] == L"-gp" || argv[i] == L"--ghost-folder-path") {
 					i++;
 					if(i < argc)
 						ghost_path = make_ghost_path(argv[i]);
+					else{
+						err << RED_OUTPUT("No ghost folder path after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 				}
 				else if(argv[i] == L"-r" || argv[i] == L"--run-ghost") {	   //run ghost if not running
 					run_ghost = 1;
@@ -649,6 +678,10 @@ class ghost_terminal final: public simple_terminal {
 				}
 				else if(argv[i] == L"--disable-text") {
 					i++;
+					if(i >= argc){
+						err << RED_OUTPUT("No disable text types after "<< argv[i - 1] << ".") << endline;
+						exit(1);
+					}
 					const wstring& disable_text = argv[i];
 					if(disable_text == L"all")
 						disable_root_text=disable_event_text=disable_WindowsTerminal_text=disable_FiraCode_text=true;
@@ -669,7 +702,7 @@ class ghost_terminal final: public simple_terminal {
 						}
 				}
 				else if(argv[i] == L"-h" || argv[i] == L"--help") {		  //help
-					out <<"ghost terminal v" GT_VAR_STR "\n\n"<<
+					out <<"ghost terminal " VERSION_STRING_WITH_V "\n\n"<<
 						  LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
 						  "options:\n"
 						  "  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message " SET_RED "and exits.\n"
@@ -695,7 +728,7 @@ class ghost_terminal final: public simple_terminal {
 					exit(0);
 				}
 				else if(argv[i] == L"-v" || argv[i] == L"--version") {
-					out << SET_GRAY "ghost terminal v" GT_VAR_STR "\n" RESET_COLOR;
+					out << SET_GRAY "ghost terminal " VERSION_STRING_WITH_V "\n" RESET_COLOR;
 					exit(0);
 				}
 				else {

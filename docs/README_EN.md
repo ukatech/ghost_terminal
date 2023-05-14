@@ -13,7 +13,7 @@ Easy to use for ghost development
 ## Command line arguments  
 
 ```text
-ghost terminal v13.4
+ghost terminal v13.8
 
 ghost_terminal [options]
 options:
@@ -69,6 +69,11 @@ The rest of the events should only be defined if you want to change the default 
   ghost_terminal event when this ghost starts  
   - `Reference0`  
     Terminal version  
+  - `Reference1`  
+    Terminal session type  
+    `SakuraScript` if terminal start with `-s`  
+    `Command` if terminal start with `-c`  
+    `Common` if terminal start commonly  
   - Return value  
     - `X-SSTP-PassThru-Tittle` (optional)  
       Set the terminal title  

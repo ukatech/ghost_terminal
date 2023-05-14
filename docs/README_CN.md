@@ -13,7 +13,7 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 ## 命令行参数  
 
 ```text
-ghost terminal v13.4
+ghost terminal v13.8
 
 ghost_terminal [options]
 选项：
@@ -69,6 +69,11 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   ghost_terminal对此ghost启动时事件  
   - `Reference0`  
     终端版本  
+  - `Reference1`
+    终端启动方式  
+    当terminal以`-s`启动时，为`SakuraScript`  
+    当terminal以`-c`启动时，为`Command`  
+    否则为`Common`  
   - 返值  
     - `X-SSTP-PassThru-Tittle`（可选）  
       设置终端标题  

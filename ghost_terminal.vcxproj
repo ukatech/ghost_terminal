@@ -22,6 +22,13 @@
     <ClCompile Include="src\ghost_terminal.cpp" />
     <ClCompile Include="src\_gists.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\resource\ghost_terminal.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\resource\resource.h" />
+    <ClInclude Include="src\Version.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

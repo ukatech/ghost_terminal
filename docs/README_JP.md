@@ -15,7 +15,7 @@ ghost_terminalをシステム端末のように使用する
 テキスト
 
 ```text
-ghost terminal v13.4
+ghost terminal v13.8
 
 ghost_terminal [オプション]を指定します。
 オプションで指定します。
@@ -71,6 +71,11 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   このゴーストが起動したときのghost_terminalイベント  
   - `Reference0`  
     ターミナルバージョン  
+  - `Reference1`  
+    端末のセッションタイプ  
+    端末が `-s` で始まる場合は `SakuraScript` となる。  
+    端末が `-c` で始まる場合は `Command` となる。  
+    端末が共通で起動する場合は `Common` となる。  
   - 戻り値  
     - `X-SSTP-PassThru-Tittle` (オプション)  
       端末のタイトルを設定する  
