@@ -1,10 +1,10 @@
-- [JP](./README_JP.md)  
-- [CN](./README_CN.md)  
-- [EN](./README_EN.md)  
+- [JP](docs/README_JP.md)  
+- [CN](docs/README_CN.md)  
+- [EN](docs/README_EN.md)  
 
 # ghost_terminal  
 
-![preview image](./preview.png)  
+![preview image](docs/preview.png)  
 Original trial product, now finding it somewhat useful (  
 
 ## Usage  

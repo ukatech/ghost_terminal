@@ -19,10 +19,7 @@
 #include <string>
 #include <string_view>
 #include <ranges>
-#ifdef _WIN32
-	#include <fcntl.h>
-	#include <io.h>
-#endif
+
 #include <shlwapi.h>//PathFileExistsW
 #include <shlobj_core.h>//SHCreateDirectoryEx
 #include <conio.h>//_kbhit
@@ -32,12 +29,12 @@
 
 #define floop while(1)
 
-#define GT_VAR_STR "13.6"
+#define GT_VAR_STR "13.7"
 
 using namespace SSTP_link_n;
 using namespace std;
 
-wstring to_command_path_string(wstring str)noexcept {
+wstring to_command_path_string(wstring str) noexcept {
 	if(str.ends_with('\\'))// 考虑"path\"，很明显\"会构成转义序列
 		str.pop_back();
 	return str;
@@ -67,40 +64,40 @@ class ghost_terminal final: public simple_terminal {
 		wstring sakurascript;
 		bool	register2wt = 0;
 
-		bool disable_root_text = 0;
-		bool disable_event_text = 0;
+		bool disable_root_text			  = 0;
+		bool disable_event_text			  = 0;
 		bool disable_WindowsTerminal_text = 0;
-		bool disable_FiraCode_text = 0;
+		bool disable_FiraCode_text		  = 0;
 	} args_info;
 	wstring ghost_uid;
 
-	bool	is_windows_terminal = InWindowsTerminal();
-	bool	fira_code_font_found = 0;
-	wstring LOCALAPPDATA;
-	wstring old_title;
+	bool		is_windows_terminal	 = InWindowsTerminal();
+	bool		fira_code_font_found = 0;
+	wstring		LOCALAPPDATA		 = _wgetenv(L"LOCALAPPDATA");
+	wstring		old_title;
 	ICON_INFO_t old_icon_info;
-	void	before_terminal_login() override {
+
+	void before_terminal_login() override {
 		simple_terminal::before_terminal_login();
 		old_title.resize(MAX_PATH);
 		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
-		old_icon_info= GetConsoleIcon();
-		LOCALAPPDATA = _wgetenv(L"LOCALAPPDATA");
+		old_icon_info = GetConsoleIcon();
 	}
 
 	void terminal_login() override {
 		SFMO_t fmobj;
-		auto&  ghost_link_to = args_info.ghost_link_to;
-		auto&  ghost_path	 = args_info.ghost_path;
-		const auto&  run_ghost	 = args_info.run_ghost;
-		auto&  ghost_hwnd	 = args_info.ghost_hwnd;
-		const auto&  command		 = args_info.command;
-		const auto&  sakurascript	 = args_info.sakurascript;
-		const auto&  register2wt	 = args_info.register2wt;
+		auto&		ghost_link_to = args_info.ghost_link_to;
+		auto&		ghost_path	  = args_info.ghost_path;
+		const auto& run_ghost	  = args_info.run_ghost;
+		auto&		ghost_hwnd	  = args_info.ghost_hwnd;
+		const auto& command		  = args_info.command;
+		const auto& sakurascript  = args_info.sakurascript;
+		const auto& register2wt	  = args_info.register2wt;
 		//disables
 		const auto& disable_root_text			 = args_info.disable_root_text;
-		const auto&	disable_event_text			 = args_info.disable_event_text;
-		const auto&	disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
-		const auto&	disable_FiraCode_text		 = args_info.disable_FiraCode_text;
+		const auto& disable_event_text			 = args_info.disable_event_text;
+		const auto& disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
+		const auto& disable_FiraCode_text		 = args_info.disable_FiraCode_text;
 
 		//处理ghost_path，获得ghost_link_to
 		if(!ghost_path.empty() && ghost_link_to.empty()) {
@@ -216,6 +213,7 @@ class ghost_terminal final: public simple_terminal {
 							exit(0);
 						case WEOF:
 						case 13:	   //enter
+							_putwch(L'\n');
 							ghost_hwnd = (HWND)wcstoll(p->second[L"hwnd"].c_str(), nullptr, 10);
 							break;
 						case 9: {		//tab
@@ -262,6 +260,7 @@ class ghost_terminal final: public simple_terminal {
 					exit(1);
 				}
 			}
+			linker.link_to_ghost(ghost_hwnd);
 		}
 		else {
 			err << RED_TEXT("Can\'t read FMO info.") << endline;
@@ -270,13 +269,14 @@ class ghost_terminal final: public simple_terminal {
 			start_ghost();
 			goto link_to_ghost;
 		}
-		waiter([&] {
-			return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
-		}, L"ghost's shiori ready");
+		if(sakurascript.empty())//发送ss不需要shiori就绪
+			waiter([&] {
+				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
+			}, L"ghost's shiori ready");
 
 		if(!is_windows_terminal && !disable_WindowsTerminal_text) {
 			if(!register2wt) {
-				wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
+				const wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 				if(!PathFileExistsW(wt_path.c_str()))
 					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
 									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR << endline;
@@ -284,14 +284,14 @@ class ghost_terminal final: public simple_terminal {
 					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ") for a better experience under Windows Terminal." RESET_COLOR << endline;
 			}
 		}
-		if(!disable_FiraCode_text){
+		if(!disable_FiraCode_text) {
 			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
 			//如果找不到，就提示一下
 			LOGFONTW lf;
-			lf.lfCharSet = DEFAULT_CHARSET;
+			lf.lfCharSet	 = DEFAULT_CHARSET;
 			lf.lfFaceName[0] = L'\0';
-			HDC hdc = GetDC(NULL);
-			if(hdc){
+			HDC hdc			 = GetDC(NULL);
+			if(hdc) {
 				EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
 				ReleaseDC(NULL, hdc);
 			}
@@ -314,18 +314,18 @@ class ghost_terminal final: public simple_terminal {
 			}
 			{
 				ICON_INFO_t icon_info = old_icon_info;
-				if (result.has(L"Icon")) {
+				if(result.has(L"Icon")) {
 					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
-					if (!hIcon)
+					if(!hIcon)
 						err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
 					else {
 						icon_info.hIcon		 = hIcon;
 						icon_info.hIconSmall = hIcon;
 					}
 				}
-				if (result.has(L"SmallIcon")) {
+				if(result.has(L"SmallIcon")) {
 					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
-					if (!hIcon)
+					if(!hIcon)
 						err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
 					else
 						icon_info.hIconSmall = hIcon;
@@ -335,7 +335,7 @@ class ghost_terminal final: public simple_terminal {
 
 			if(result.has(L"CustomLoginInfo"))
 				out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
-			else{
+			else {
 				out << CYAN_TEXT("terminal login\n");
 				if(names.has(L"GhostName"))
 					out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
@@ -362,10 +362,10 @@ class ghost_terminal final: public simple_terminal {
 				   "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
 				   "It will just run as it always does.\n\n" RESET_COLOR;
 		if(linker.Has_Event(L"Has_Event")) {
-			auto&err=[&]()->base_out_t&{
+			auto& err = [&]() -> base_out_t& {
 				if(disable_event_text)
 					return nullstream;
-				return::err;
+				return ::err;
 			}();
 			err << SET_GRAY;
 			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))//在disable_event_text时完全可以不检查ShioriEcho
@@ -431,13 +431,13 @@ class ghost_terminal final: public simple_terminal {
 	bool able_command_history  = 1;
 	bool able_command_prompt   = 1;
 
-
-	std::wstring terminal_command_prompt(){
-		if(!able_command_prompt)
-			return simple_terminal::terminal_command_prompt();
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandPrompt"}});
-		if(Result.has(L"Prompt"))
-			return Result[L"Prompt"];
+	std::wstring terminal_command_prompt() {
+		if(able_command_prompt) {
+			auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandPrompt"}});
+			if(Result.has(L"Prompt"))
+				return Result[L"Prompt"];
+		}
+		return simple_terminal::terminal_command_prompt();
 	}
 	editting_command_t terminal_command_complete_by_right(const editting_command_t& command) {
 		if(!able_command_complete)
@@ -457,7 +457,7 @@ class ghost_terminal final: public simple_terminal {
 		if(!able_command_update)
 			return command;
 		{
-			bool in_kbhit = _kbhit();
+			const bool in_kbhit = _kbhit();
 			if(in_kbhit) {		 //考虑到sstp极慢的速度，只在需要时更新command的色彩
 				const auto next_ch = _getwch();
 				_ungetwch(next_ch);
@@ -543,7 +543,7 @@ class ghost_terminal final: public simple_terminal {
 					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
 					{
 						const auto code = Result.get_code();
-						if(code == 404||code == -1) {
+						if(code == 404 || code == -1) {
 							err << RED_TEXT("Lost connection with target ghost.") << endline;
 							exit(1);
 						}
@@ -594,7 +594,7 @@ class ghost_terminal final: public simple_terminal {
 		auto& ghost_hwnd	= args_info.ghost_hwnd;
 		auto& command		= args_info.command;
 		auto& sakurascript	= args_info.sakurascript;
-		auto&  register2wt	= args_info.register2wt;
+		auto& register2wt	= args_info.register2wt;
 		//disables
 		auto& disable_root_text			   = args_info.disable_root_text;
 		auto& disable_event_text		   = args_info.disable_event_text;
@@ -647,10 +647,10 @@ class ghost_terminal final: public simple_terminal {
 					if(i < argc)
 						wt_icon = argv[i];
 				}
-				else if(argv[i] == L"--disable-text"){
+				else if(argv[i] == L"--disable-text") {
 					i++;
-					const wstring&disable_text = argv[i];
-					if(disable_text==L"all")
+					const wstring& disable_text = argv[i];
+					if(disable_text == L"all")
 						disable_root_text=disable_event_text=disable_WindowsTerminal_text=disable_FiraCode_text=true;
 					else
 						//for each disable text split by ','
@@ -694,7 +694,7 @@ class ghost_terminal final: public simple_terminal {
 						  RESET_COLOR;
 					exit(0);
 				}
-				else if(argv[i] == L"-v" || argv[i] == L"--version"){
+				else if(argv[i] == L"-v" || argv[i] == L"--version") {
 					out << SET_GRAY "ghost terminal v" GT_VAR_STR "\n" RESET_COLOR;
 					exit(0);
 				}
@@ -755,7 +755,7 @@ class ghost_terminal final: public simple_terminal {
 			constexpr auto default_icon = L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png"sv;
 			if(wt_icon.empty())
 				wt_icon = default_icon;
-			auto&my_name = argv[0];
+			auto& my_name = argv[0];
 			{
 				//update my name to full path
 				wchar_t full_path[MAX_PATH];
@@ -810,7 +810,7 @@ class ghost_terminal final: public simple_terminal {
 					start_command			   = L'"' + to_command_path_string(my_name) + L"\" -gp \"" + simplified_ghost_path + L"\" -r";
 				}
 				if(disable_root_text | disable_event_text | disable_WindowsTerminal_text | disable_FiraCode_text) {
-						start_command += L" --disable-text ";
+					start_command += L" --disable-text ";
 					if(disable_root_text)
 						start_command += L"root,";
 					if(disable_event_text)
@@ -861,11 +861,11 @@ class ghost_terminal final: public simple_terminal {
 		}
 	}
 	static int CALLBACK FiraCode_Finder(const LOGFONTW *lpelfe, const TEXTMETRICW *lpntme, DWORD FontType, LPARAM lParam)noexcept{
-		auto& self=*(ghost_terminal*)lParam;
-		const wstring_view font_name=lpelfe->lfFaceName;
-		if(font_name.find(L"Fira Code")==0) {
-			self.fira_code_font_found=true;
-			return 0;//stop enum
+		auto& self = *(ghost_terminal*)lParam;
+		const wstring_view font_name = lpelfe->lfFaceName;
+		if(font_name.find(L"Fira Code") == 0) {
+			self.fira_code_font_found = true;
+			return 0;		//stop enum
 		}
 		return 1;
 	}
