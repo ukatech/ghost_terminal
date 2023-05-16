@@ -22,7 +22,6 @@
 
 #include <shlwapi.h>//PathFileExistsW
 #include <shlobj_core.h>//SHCreateDirectoryEx
-#include <conio.h>//_kbhit
 
 //lib of PathFileExists & SHCreateDirectoryEx
 #pragma comment(lib, "shlwapi.lib")
@@ -31,8 +30,9 @@
 
 #include "Version.h"
 
-using namespace SSTP_link_n;
 using namespace std;
+using namespace SSTP_link_n;
+using namespace terminal_n;
 
 wstring to_command_path_string(wstring str) noexcept {
 	if(str.ends_with('\\'))// 考虑"path\"，很明显\"会构成转义序列
@@ -52,9 +52,8 @@ wstring do_transfer(wstring a) {
 }
 
 class ghost_terminal final: public simple_terminal {
-	SSTP_link_t linker{{{L"Charset", L"UTF-8"},
-						{L"Sender", L"Ghost Terminal"},
-						{L"SecurityLevel", L"local"}}};
+private:
+	//data valueable until terminal login
 	struct args_info_t {
 		wstring ghost_link_to;
 		wstring ghost_path;
@@ -68,371 +67,42 @@ class ghost_terminal final: public simple_terminal {
 		bool disable_event_text			  = 0;
 		bool disable_WindowsTerminal_text = 0;
 		bool disable_FiraCode_text		  = 0;
-	} args_info;
-	wstring ghost_uid;
-
-	bool		is_windows_terminal	 = InWindowsTerminal();
-	bool		fira_code_font_found = 0;
-	wstring		LOCALAPPDATA		 = _wgetenv(L"LOCALAPPDATA");
-	wstring		old_title;
-	ICON_INFO_t old_icon_info;
-
-	void before_terminal_login() override {
-		simple_terminal::before_terminal_login();
-		old_title.resize(MAX_PATH);
-		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
-		old_icon_info = GetConsoleIcon();
-	}
-
-	void terminal_login() override {
-		SFMO_t fmobj;
-		auto&		ghost_link_to = args_info.ghost_link_to;
-		auto&		ghost_path	  = args_info.ghost_path;
-		const auto& run_ghost	  = args_info.run_ghost;
-		auto&		ghost_hwnd	  = args_info.ghost_hwnd;
-		const auto& command		  = args_info.command;
-		const auto& sakurascript  = args_info.sakurascript;
-		const auto& register2wt	  = args_info.register2wt;
-		//disables
-		const auto& disable_root_text			 = args_info.disable_root_text;
-		const auto& disable_event_text			 = args_info.disable_event_text;
-		const auto& disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
-		const auto& disable_FiraCode_text		 = args_info.disable_FiraCode_text;
-
-		//处理ghost_path，获得ghost_link_to
-		if(!ghost_path.empty() && ghost_link_to.empty()) {
-			ghost_link_to = from_ghost_path::get_name(ghost_path);
-			if(ghost_link_to.empty()) {
-				err << SET_RED "Can't find ghost name from " SET_BLUE << ghost_path << RESET_COLOR << endline;
-				exit(1);
-			}
+	};
+	struct data_until_login_t{//保持直到终端登录的数据
+		args_info_t args_info;
+		bool		 fira_code_font_found = 0;
+		wstring		 LOCALAPPDATA		  = _wgetenv(L"LOCALAPPDATA");
+	};
+	struct data_until_login_saver_t {
+		data_until_login_t* data_until_login_ptr;
+		void take_new(){
+			data_until_login_ptr=new data_until_login_t;
 		}
-		auto waiter = [&](auto condition, wstring condition_str, size_t timeout = 30) {
-			if(!condition()) {
-				out << LIGHT_YELLOW_OUTPUT("Waiting for " << condition_str << "...") << flush;
-				terminal::reprinter_t reprinter;
-				size_t				  time = 0;
-				floop {
-					reprinter(L"" YELLOW_TEXT("(" + to_wstring(time) + L'/' + to_wstring(timeout) + L"s)"));
-					Sleep(1000);
-					if(timeout == time) {
-						out << endline;
-						err << RED_TEXT("timeout.") << endline;
-						exit(1);
-					}
-					time++;
-					if(condition())
-						break;
-				}
-				out << endline;
+		data_until_login_t& get(){
+			return *data_until_login_ptr;
+		}
+		struct destroy_flag_t{
+			data_until_login_t* data_until_login_ptr;
+			~destroy_flag_t(){
+				delete data_until_login_ptr;
 			}
 		};
-		auto start_ghost = [&] {
-			out << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
-			if(ghost_link_to.empty() && ghost_path.empty())		  //?
-				err << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost (by name or path).\n" RESET_COLOR;
-			{
-				SSP_Runner SSP;
-				if(!SSP.IsInstalled()) {
-					err << RED_TEXT("SSP is not installed.") << endline;
-					exit(1);
-				}
-				if(ghost_path.empty())
-					SSP.run_ghost(ghost_link_to);
-				else if(ghost_link_to.empty())
-					SSP();
-				else
-					SSP.run_ghost(ghost_path);
-			}
-			fmobj.Update_info();
-			waiter([&] {
-				return fmobj.Update_info() && fmobj.info_map.size() > 0;
-			}, L"FMO initialized");
-			if(!ghost_link_to.empty())
-				waiter([&] {
-					if(fmobj.Update_info())
-						for(auto& i: fmobj.info_map) {
-							HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-							if(i.second[L"fullname"] == ghost_link_to)
-								return ghost_hwnd = tmp_hwnd;
-						}
-					return HWND{0};
-				}, L"ghost hwnd created");
-		};
-		if(ghost_hwnd)
-			goto link_to_ghost;
-		if(fmobj.Update_info()) {
-			{
-				const auto ghostnum = fmobj.info_map.size();
-				if(ghostnum == 0) {
-					err << RED_TEXT("None of ghost was running.") << endline;
-					if(!run_ghost)
-						exit(1);
-					start_ghost();
-				}
-				else if(!ghost_link_to.empty()) {
-					for(auto& i: fmobj.info_map) {
-						HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-						if(i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to) {
-							ghost_hwnd = tmp_hwnd;
-							ghost_uid  = i.first;
-							break;
-						}
-						else {
-							linker.link_to_ghost(tmp_hwnd);
-							auto names = linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
+		destroy_flag_t make_destroy_flag(){
+			return destroy_flag_t{data_until_login_ptr};
+		}
+	}data_until_login_saver;
 
-							if(names[L"GhostName"] == ghost_link_to) {
-								ghost_hwnd = tmp_hwnd;
-								ghost_uid  = i.first;
-								break;
-							}
-							else
-								linker.link_to_ghost(NULL);
-						}
-					}
-					if(!ghost_hwnd) {
-						err << SET_RED "Target ghost: " SET_BLUE << ghost_link_to << SET_RED " not found." RESET_COLOR << endline;
-						exit(1);
-					}
-				}
-				else if(ghostnum == 1) {
-					out << GRAY_TEXT("Only one ghost was running.\n");
-					ghost_hwnd = (HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(), nullptr, 10);
-				}
-				else {
-					out << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
-					terminal::reprinter_t reprinter;
-					const auto			  pbg = fmobj.info_map.begin();
-					const auto			  ped = fmobj.info_map.end();
-					auto				  p	  = pbg;
-					while(!ghost_hwnd) {
-						reprinter(p->second[L"name"]);
-						switch(_getwch()) {
-						case 27:	   //esc
-							exit(0);
-						case WEOF:
-						case 13:	   //enter
-							_putwch(L'\n');
-							ghost_hwnd = (HWND)wcstoll(p->second[L"hwnd"].c_str(), nullptr, 10);
-							break;
-						case 9: {		//tab
-							p++;
-							if(p == ped)
-								p = pbg;
-							break;
-						}
-						case 0xE0: {	   //方向字符先导字符
-							switch(_getwch()) {
-							case 72:	   //up
-							case 83:	   //delete
-							case 75:	   //left
-								if(p == pbg)
-									p = ped;
-								p--;
-								break;
-							case 77:	   //right
-							case 80:	   //down
-								p++;
-								if(p == ped)
-									p = pbg;
-								break;
-							}
-							break;
-						}
-						}
-					}
-				}
-			}
-		link_to_ghost:
-			if(ghost_uid.empty()) {
-				if(fmobj.Update_info()) {
-					for(auto& i: fmobj.info_map) {
-						const HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
-						if(ghost_hwnd == tmp_hwnd) {
-							ghost_uid = i.first;
-							break;
-						}
-					}
-				}
-				if(ghost_uid.empty()) {
-					err << RED_TEXT("Can\'t get ghost_uid.") << endline;
-					exit(1);
-				}
-			}
-			linker.link_to_ghost(ghost_hwnd);
-		}
-		else {
-			err << RED_TEXT("Can\'t read FMO info.") << endline;
-			if(!run_ghost)
-				exit(1);
-			start_ghost();
-			goto link_to_ghost;
-		}
-		if(sakurascript.empty())//发送ss不需要shiori就绪
-			waiter([&] {
-				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
-			}, L"ghost's shiori ready");
+	//ghost info & linker
+	SSTP_link_t linker{{{L"Charset", L"UTF-8"},
+						{L"Sender", L"Ghost Terminal"},
+						{L"SecurityLevel", L"local"}}};
+	wstring		ghost_uid;
 
-		if(!is_windows_terminal && !disable_WindowsTerminal_text) {
-			if(!register2wt) {
-				const wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
-				if(!PathFileExistsW(wt_path.c_str()))
-					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
-									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR << endline;
-				else
-					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ") for a better experience under Windows Terminal." RESET_COLOR << endline;
-			}
-		}
-		if(!disable_FiraCode_text) {
-			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
-			//如果找不到，就提示一下
-			LOGFONTW lf;
-			lf.lfCharSet	 = DEFAULT_CHARSET;
-			lf.lfFaceName[0] = L'\0';
-			HDC hdc			 = GetDC(NULL);
-			if(hdc) {
-				EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
-				ReleaseDC(NULL, hdc);
-			}
-			if(!fira_code_font_found)
-				out << SET_GRAY "You can use " SET_GREEN "Fira Code" SET_GRAY " font for a better experience in terminal and editor.\n"
-					   "Try it from <" UNDERLINE_TEXT("https://github.com/tonsky/FiraCode") "> !" RESET_COLOR << endline;
-		}
-		{
-			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
-			auto result = linker.NOTYFY({
-											{L"Event", L"ShioriEcho.Begin"},
-											{L"Reference0", L"" VERSION_STRING},
-											{L"Reference1", [&]{//mode
-												if(!command.empty())
-													return L"Command";
-												if(!sakurascript.empty())
-													return L"SakuraScript";
-												return L"Common";
-											}()},
-										});
-			{
-				//set console title
-				wstring title = L"Ghost Terminal";
-				if(result.has(L"Tittle"))
-					title = result[L"Tittle"];
-				else if(!args_info.ghost_link_to.empty())
-					title += L" - " + args_info.ghost_link_to;
-				SetConsoleTitleW(title.c_str());
-			}
-			{
-				ICON_INFO_t icon_info = old_icon_info;
-				if(result.has(L"Icon")) {
-					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
-					if(!hIcon)
-						err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
-					else {
-						icon_info.hIcon		 = hIcon;
-						icon_info.hIconSmall = hIcon;
-					}
-				}
-				if(result.has(L"SmallIcon")) {
-					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
-					if(!hIcon)
-						err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
-					else
-						icon_info.hIconSmall = hIcon;
-				}
-				SetConsoleIcon(icon_info);
-			}
+	//old terminal info for restore
+	wstring		 old_title;
+	ICON_INFO_t	 old_icon_info;
 
-			if(result.has(L"CustomLoginInfo"))
-				out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
-			else {
-				out << CYAN_TEXT("terminal login\n");
-				if(names.has(L"GhostName"))
-					out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
-				if(names.has(L"UserName"))
-					out << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
-			}
-		}
-
-		bool need_end = 0;
-		if(!command.empty()) {
-			terminal_run(command);
-			need_end = 1;
-		}
-		if(!sakurascript.empty()) {
-			linker.SEND({{L"ID", ghost_uid}, {L"Script", sakurascript}});
-			need_end = 1;
-		}
-		if(need_end) {
-			terminal_exit();
-			exit(0);
-		}
-		if(!disable_root_text && IsElevated())
-			out << SET_GRAY "Coooool, You're running terminal with " BOLD_TEXT(UNDERLINE_TEXT("root") " access") "!\n"
-				   "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
-				   "It will just run as it always does.\n\n" RESET_COLOR;
-		if(linker.Has_Event(L"Has_Event")) {
-			auto& err = [&]() -> base_out_t& {
-				if(disable_event_text)
-					return nullstream;
-				return ::err;
-			}();
-			err << SET_GRAY;
-			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))//在disable_event_text时完全可以不检查ShioriEcho
-				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
-					   "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
-			//ShioriEcho.GetResult
-			if(!linker.Has_Event(L"ShioriEcho.GetResult")) {
-				able_get_result = 0;
-				err << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
-					   "Terminal will not send get result event to your ghost and will not echo result.\n\n";
-			}
-			if(!linker.Has_Event(L"ShioriEcho.CommandComplete")) {
-				able_command_complete = 0;
-				err << "Event " SET_GREEN "ShioriEcho.CommandComplete" SET_GRAY " Not defined.\n"
-					   "Terminal will not send command complete event to your ghost.\n\n";
-			}
-			if(!linker.Has_Event(L"ShioriEcho.CommandUpdate")) {
-				able_command_update = 0;
-				err << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
-					   "Terminal will not send command update event to your ghost.\n\n";
-			}
-			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") ||
-			   !linker.Has_Event(L"ShioriEcho.CommandHistory.Update") || !linker.Has_Event(L"ShioriEcho.CommandHistory.NextIndex")) {
-				able_command_history = 0;
-				err << "Your ghost needs to support all of the following events to support command history:\n"
-					   SET_GREEN
-					   "ShioriEcho.CommandHistory.New\n"
-					   "ShioriEcho.CommandHistory.Get\n"
-					   "ShioriEcho.CommandHistory.Update\n"
-					   "ShioriEcho.CommandHistory.NextIndex\n"
-					   SET_GRAY
-					   "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
-			}
-			if(!linker.Has_Event(L"ShioriEcho.TabPress")) {
-				able_tab_press = 0;
-				err << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
-					   "Terminal will not send tab press event to your ghost.\n\n";
-			}
-			if(!linker.Has_Event(L"ShioriEcho.CommandPrompt")) {
-				able_command_prompt = 0;
-				err << "Event " SET_GREEN "ShioriEcho.CommandPrompt" SET_GRAY " Not defined.\n"
-					   "Terminal will not send command prompt event to your ghost.\n\n";
-			}
-			err << RESET_COLOR;
-		}
-		else {
-			able_tab_press		  = 0;
-			able_command_update	  = 0;
-			able_command_complete = 0;
-			able_command_history  = 0;
-			able_command_prompt	  = 0;
-			able_get_result		  = 0;
-			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
-				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
-				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " event." RESET_COLOR "\n\n";
-		}
-	}
-
+	//ables
 	bool able_get_result	   = 1;
 	bool able_tab_press		   = 1;
 	bool able_command_update   = 1;
@@ -440,163 +110,32 @@ class ghost_terminal final: public simple_terminal {
 	bool able_command_history  = 1;
 	bool able_command_prompt   = 1;
 
-	std::wstring terminal_command_prompt() {
-		if(able_command_prompt) {
-			auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandPrompt"}});
-			if(Result.has(L"Prompt"))
-				return Result[L"Prompt"];
+private:
+	static int CALLBACK FiraCode_Finder(const LOGFONTW *lpelfe, const TEXTMETRICW *lpntme, DWORD FontType, LPARAM lParam)noexcept{
+		auto& self = *(ghost_terminal*)lParam;
+		const wstring_view font_name = lpelfe->lfFaceName;
+		if(font_name.find(L"Fira Code") == 0) {
+			self.data_until_login_saver.get().fira_code_font_found = true;
+			return 0;		//stop enum
 		}
-		return simple_terminal::terminal_command_prompt();
+		return 1;
 	}
-	editting_command_t terminal_command_complete_by_right(const editting_command_t& command) {
-		if(!able_command_complete)
-			return command;
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandComplete"},
-									 {L"Reference0", command.command},
-									 {L"Reference1", to_wstring(command.insert_index)}});
+protected:
+	//before terminal run
+	virtual void before_terminal_login() override {
+		simple_terminal::before_terminal_login();
+		old_title.resize(MAX_PATH);
+		old_title.resize(GetConsoleTitleW(old_title.data(), old_title.size()));
+		old_icon_info = GetConsoleIcon();
+	}
+	virtual void terminal_args(size_t argc, std::vector<std::wstring>& argv) override {
+		data_until_login_saver.take_new();
 
-		editting_command_t Result_command = command;
-		if(Result.has(L"Command"))
-			Result_command.command = Result[L"Command"];
-		if(Result.has(L"InsertIndex"))
-			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
-		return Result_command;
-	}
-	std::wstring terminal_command_update(std::wstring command) {
-		if(!able_command_update)
-			return command;
-		{
-			const bool in_kbhit = _kbhit();
-			if(in_kbhit) {		 //考虑到sstp极慢的速度，只在需要时更新command的色彩
-				const auto next_ch = _getwch();
-				_ungetwch(next_ch);
-				if(next_ch != L'\n' && next_ch != L'\r')
-					return command;
-			}
-		}
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandUpdate"},
-									 {L"Reference0", command}});
-		if(Result.has(L"CommandForDisplay"))
-			return Result[L"CommandForDisplay"];
-		else
-			return command;
-	}
-	void terminal_command_history_new() {
-		if(!able_command_history) {
-			simple_terminal::terminal_command_history_new();
-			return;
-		}
-		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.New"}});
-	}
-	void terminal_command_history_update_last(const std::wstring& command, size_t before_num) {
-		if(!able_command_history) {
-			simple_terminal::terminal_command_history_update(command, before_num);
-			return;
-		}
-		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Update"},
-					   {L"Reference0", command},
-					   {L"Reference1", to_wstring(before_num)}});
-	}
-	bool terminal_command_history_next(size_t& index) {
-		if(!able_command_history)
-			return simple_terminal::terminal_command_history_next(index);
+		auto& data_until_login = data_until_login_saver.get();
+		auto& args_info = data_until_login.args_info;
+		auto& fira_code_font_found = data_until_login.fira_code_font_found;
+		auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.NextIndex"},
-									 {L"Reference0", to_wstring(index)}});
-		if(Result.has(L"Index")) {
-			index = (size_t)stoull(Result[L"Index"]);
-			return true;
-		}
-		else
-			return false;
-	}
-	std::wstring terminal_get_command_history(size_t before_num) {
-		if(!able_command_history) {
-			return simple_terminal::terminal_get_command_history(before_num);
-		}
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Get"},
-									 {L"Reference0", to_wstring(before_num)}});
-		if(Result.has(L"Command"))
-			return Result[L"Command"];
-		else
-			return {};
-	}
-	editting_command_t terminal_tab_press(const editting_command_t& command, size_t tab_num) override {
-		if(!able_tab_press)
-			return command;
-		static size_t last_old_insert_index = 0;
-		if(!tab_num)
-			last_old_insert_index = command.insert_index;
-		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.TabPress"},
-									 {L"Reference0", command.command},
-									 {L"Reference1", to_wstring(command.insert_index)},
-									 {L"Reference2", to_wstring(tab_num)},
-									 {L"Reference3", to_wstring(last_old_insert_index)}});
-
-		editting_command_t Result_command = command;
-		if(Result.has(L"Command"))
-			Result_command.command = Result[L"Command"];
-		if(Result.has(L"InsertIndex"))
-			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
-		if(Result.has(L"OldInsertIndex"))
-			last_old_insert_index = (size_t)stoull(Result[L"OldInsertIndex"]);
-		return Result_command;
-	}
-	bool terminal_run(const wstring& command) override {
-		linker.NOTYFY({{L"Event", L"ShioriEcho"},
-					   {L"ID", ghost_uid},
-					   {L"Reference0", command}});
-		if(able_get_result)
-			try {
-				floop {
-					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
-					{
-						const auto code = Result.get_code();
-						if(code == 404 || code == -1) {
-							err << RED_TEXT("Lost connection with target ghost.") << endline;
-							exit(1);
-						}
-					}
-					if(Result.has(L"Special")) {
-						out << do_transfer(Result[L"Special"]) << endline;
-						break;
-					}
-					else if(Result.has(L"Result")) {
-						out << Result[L"Result"] << endline;
-						if(Result.has(L"Type"))
-							out << "Type: " << Result[L"Type"] << endline;
-						break;
-					}
-					else if(Result.has(L"Type")) {
-						out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
-							<< to_ansi_colored_wstring(Result) << endline;
-						break;
-					}
-					else {
-						Sleep(1000);
-					}
-					if(Result.has(L"Status")) {
-						const auto& status = Result[L"Status"];
-						if(status == L"End")
-							return false;
-						else if(status == L"Continue")
-							break;
-					}
-				}
-			}
-			catch(const std::exception& a) {
-				err << RED_OUTPUT(a.what()) << endline;
-				exit(1);
-			}
-		return true;
-	}
-	void terminal_exit() override {
-		linker.NOTYFY({{L"Event", L"ShioriEcho.End"}});
-		SetConsoleTitleW(old_title.c_str());
-		SetConsoleIcon(old_icon_info);
-		simple_terminal::terminal_exit();
-	}
-	void terminal_args(size_t argc, std::vector<std::wstring>& argv) override {
 		auto& ghost_path	= args_info.ghost_path;
 		auto& run_ghost		= args_info.run_ghost;
 		auto& ghost_link_to = args_info.ghost_link_to;
@@ -893,14 +432,548 @@ class ghost_terminal final: public simple_terminal {
 			}
 		}
 	}
-	static int CALLBACK FiraCode_Finder(const LOGFONTW *lpelfe, const TEXTMETRICW *lpntme, DWORD FontType, LPARAM lParam)noexcept{
-		auto& self = *(ghost_terminal*)lParam;
-		const wstring_view font_name = lpelfe->lfFaceName;
-		if(font_name.find(L"Fira Code") == 0) {
-			self.fira_code_font_found = true;
-			return 0;		//stop enum
+	virtual void terminal_login() override {
+		SFMO_t fmobj;
+
+		auto& data_until_login = data_until_login_saver.get();
+		auto& args_info = data_until_login.args_info;
+		auto& fira_code_font_found = data_until_login.fira_code_font_found;
+		auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
+
+		//make destroy_flag as data is no longer needed after this function
+		auto destroy_flag = data_until_login_saver.make_destroy_flag();
+
+		auto&		ghost_link_to = args_info.ghost_link_to;
+		auto&		ghost_path	  = args_info.ghost_path;
+		const auto& run_ghost	  = args_info.run_ghost;
+		auto&		ghost_hwnd	  = args_info.ghost_hwnd;
+		const auto& command		  = args_info.command;
+		const auto& sakurascript  = args_info.sakurascript;
+		const auto& register2wt	  = args_info.register2wt;
+		//disables
+		const auto& disable_root_text			 = args_info.disable_root_text;
+		const auto& disable_event_text			 = args_info.disable_event_text;
+		const auto& disable_WindowsTerminal_text = args_info.disable_WindowsTerminal_text;
+		const auto& disable_FiraCode_text		 = args_info.disable_FiraCode_text;
+
+		//处理ghost_path，获得ghost_link_to
+		if(!ghost_path.empty() && ghost_link_to.empty()) {
+			ghost_link_to = from_ghost_path::get_name(ghost_path);
+			if(ghost_link_to.empty()) {
+				err << SET_RED "Can't find ghost name from " SET_BLUE << ghost_path << RESET_COLOR << endline;
+				exit(1);
+			}
 		}
-		return 1;
+		auto waiter = [&](auto condition, wstring condition_str, size_t timeout = 30) {
+			if(!condition()) {
+				out << LIGHT_YELLOW_OUTPUT("Waiting for " << condition_str << "...") << flush;
+				reprinter_t reprinter;
+				size_t				  time = 0;
+				floop {
+					reprinter(L"" YELLOW_TEXT("(" + to_wstring(time) + L'/' + to_wstring(timeout) + L"s)"));
+					Sleep(1000);
+					if(timeout == time) {
+						out << endline;
+						err << RED_TEXT("timeout.") << endline;
+						exit(1);
+					}
+					time++;
+					if(condition())
+						break;
+				}
+				out << endline;
+			}
+		};
+		auto start_ghost = [&] {
+			out << LIGHT_YELLOW_TEXT("Trying to start ghost...\n");
+			if(ghost_link_to.empty() && ghost_path.empty())		  //?
+				err << SET_CYAN "You can use " SET_GREEN "-g" SET_CYAN " or " SET_GREEN "-gp" SET_CYAN " to specify the ghost (by name or path).\n" RESET_COLOR;
+			{
+				SSP_Runner SSP;
+				if(!SSP.IsInstalled()) {
+					err << RED_TEXT("SSP is not installed.") << endline;
+					exit(1);
+				}
+				if(ghost_path.empty())
+					SSP.run_ghost(ghost_link_to);
+				else if(ghost_link_to.empty())
+					SSP();
+				else
+					SSP.run_ghost(ghost_path);
+			}
+			fmobj.Update_info();
+			waiter([&] {
+				return fmobj.Update_info() && fmobj.info_map.size() > 0;
+			}, L"FMO initialized");
+			if(!ghost_link_to.empty())
+				waiter([&] {
+					if(fmobj.Update_info())
+						for(auto& i: fmobj.info_map) {
+							HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+							if(i.second[L"fullname"] == ghost_link_to)
+								return ghost_hwnd = tmp_hwnd;
+						}
+					return HWND{0};
+				}, L"ghost hwnd created");
+		};
+		if(ghost_hwnd)
+			goto link_to_ghost;
+		if(fmobj.Update_info()) {
+			{
+				const auto ghostnum = fmobj.info_map.size();
+				if(ghostnum == 0) {
+					err << RED_TEXT("None of ghost was running.") << endline;
+					if(!run_ghost)
+						exit(1);
+					start_ghost();
+				}
+				else if(!ghost_link_to.empty()) {
+					for(auto& i: fmobj.info_map) {
+						HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+						if(i.second[L"name"] == ghost_link_to || i.second[L"fullname"] == ghost_link_to) {
+							ghost_hwnd = tmp_hwnd;
+							ghost_uid  = i.first;
+							break;
+						}
+						else {
+							linker.link_to_ghost(tmp_hwnd);
+							auto names = linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
+
+							if(names[L"GhostName"] == ghost_link_to) {
+								ghost_hwnd = tmp_hwnd;
+								ghost_uid  = i.first;
+								break;
+							}
+							else
+								linker.link_to_ghost(NULL);
+						}
+					}
+					if(!ghost_hwnd) {
+						err << SET_RED "Target ghost: " SET_BLUE << ghost_link_to << SET_RED " not found." RESET_COLOR << endline;
+						exit(1);
+					}
+				}
+				else if(ghostnum == 1) {
+					out << GRAY_TEXT("Only one ghost was running.\n");
+					ghost_hwnd = (HWND)wcstoll(fmobj.info_map.begin()->second.map[L"hwnd"].c_str(), nullptr, 10);
+				}
+				else {
+					out << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
+					HANDLE				  hInput = GetStdHandle(STD_INPUT_HANDLE);
+					INPUT_RECORD		  ir;
+					DWORD				  cNumRead;
+					reprinter_t			  reprinter;
+					const auto			  pbg = fmobj.info_map.begin();
+					const auto			  ped = fmobj.info_map.end();
+					const auto psize=fmobj.info_map.size();
+					auto				  p	  = pbg;
+					while(!ghost_hwnd) {
+						reprinter(p->second[L"name"]);
+						ReadConsoleInputW(hInput, &ir, 1, &cNumRead);
+						switch(ir.EventType) {
+							case KEY_EVENT:
+								break;
+							default:
+								//ignore
+								continue;
+						}
+						const auto&key=ir.Event.KeyEvent;
+						if(!key.bKeyDown)
+							continue;
+						//esc
+						if(key.wVirtualKeyCode == VK_ESCAPE)
+							exit(0);
+						//enter
+						if(key.wVirtualKeyCode == VK_RETURN) {
+							out << L'\n';
+							ghost_hwnd = (HWND)wcstoll(p->second[L"hwnd"].c_str(), nullptr, 10);
+						}
+						//tab|right|down
+						if(key.wVirtualKeyCode == VK_TAB || key.wVirtualKeyCode == VK_RIGHT || key.wVirtualKeyCode == VK_DOWN) {
+							auto size=key.wRepeatCount%psize;
+							while(size--) {
+								p++;
+								if(p == ped)
+									p = pbg;
+							}
+						}
+						//up|delete|left
+						if(key.wVirtualKeyCode == VK_UP || key.wVirtualKeyCode == VK_DELETE || key.wVirtualKeyCode == VK_LEFT) {
+							auto size=key.wRepeatCount%psize;
+							while(size--) {
+								if(p == pbg)
+									p = ped;
+								p--;
+							}
+						}
+					}
+				}
+			}
+		link_to_ghost:
+			if(ghost_uid.empty()) {
+				if(fmobj.Update_info()) {
+					for(auto& i: fmobj.info_map) {
+						const HWND tmp_hwnd = (HWND)wcstoll(i.second[L"hwnd"].c_str(), nullptr, 10);
+						if(ghost_hwnd == tmp_hwnd) {
+							ghost_uid = i.first;
+							break;
+						}
+					}
+				}
+				if(ghost_uid.empty()) {
+					err << RED_TEXT("Can\'t get ghost_uid.") << endline;
+					exit(1);
+				}
+			}
+			linker.link_to_ghost(ghost_hwnd);
+		}
+		else {
+			err << RED_TEXT("Can\'t read FMO info.") << endline;
+			if(!run_ghost)
+				exit(1);
+			start_ghost();
+			goto link_to_ghost;
+		}
+		if(sakurascript.empty())//发送ss不需要shiori就绪
+			waiter([&] {
+				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
+			}, L"ghost's shiori ready");
+
+		if(!disable_WindowsTerminal_text && !InWindowsTerminal()) {
+			if(!register2wt) {
+				const wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
+				if(!PathFileExistsW(wt_path.c_str()))
+					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
+									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR << endline;
+				else
+					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ") for a better experience under Windows Terminal." RESET_COLOR << endline;
+			}
+		}
+		if(!disable_FiraCode_text) {
+			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
+			//如果找不到，就提示一下
+			LOGFONTW lf;
+			lf.lfCharSet	 = DEFAULT_CHARSET;
+			lf.lfFaceName[0] = L'\0';
+			HDC hdc			 = GetDC(NULL);
+			if(hdc) {
+				EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
+				ReleaseDC(NULL, hdc);
+			}
+			if(!fira_code_font_found)
+				out << SET_GRAY "You can use " SET_GREEN "Fira Code" SET_GRAY " font for a better experience in terminal and editor.\n"
+					   "Try it from <" UNDERLINE_TEXT("https://github.com/tonsky/FiraCode") "> !" RESET_COLOR << endline;
+		}
+		{
+			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
+			auto result = linker.NOTYFY({
+											{L"Event", L"ShioriEcho.Begin"},
+											{L"Reference0", L"" VERSION_STRING},
+											{L"Reference1", [&]{//mode
+												if(!command.empty())
+													return L"Command";
+												if(!sakurascript.empty())
+													return L"SakuraScript";
+												return L"Common";
+											}()},
+										});
+			{
+				//set console title
+				wstring title = L"Ghost Terminal";
+				if(result.has(L"Tittle"))
+					title = result[L"Tittle"];
+				else if(!args_info.ghost_link_to.empty())
+					title += L" - " + args_info.ghost_link_to;
+				SetConsoleTitleW(title.c_str());
+			}
+			{
+				ICON_INFO_t icon_info = old_icon_info;
+				if(result.has(L"Icon")) {
+					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"Icon"]);
+					if(!hIcon)
+						err << SET_RED "Can't load icon: " SET_BLUE << result[L"Icon"] << RESET_COLOR << endline;
+					else {
+						icon_info.hIcon		 = hIcon;
+						icon_info.hIconSmall = hIcon;
+					}
+				}
+				if(result.has(L"SmallIcon")) {
+					auto hIcon = LoadIconWithBasePath(ghost_path, result[L"SmallIcon"]);
+					if(!hIcon)
+						err << SET_RED "Can't load icon: " SET_BLUE << result[L"SmallIcon"] << RESET_COLOR << endline;
+					else
+						icon_info.hIconSmall = hIcon;
+				}
+				SetConsoleIcon(icon_info);
+			}
+
+			if(result.has(L"CustomLoginInfo"))
+				out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
+			else {
+				out << CYAN_TEXT("terminal login\n");
+				if(names.has(L"GhostName"))
+					out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
+				if(names.has(L"UserName"))
+					out << "User: " << LIGHT_YELLOW_OUTPUT(names[L"UserName"]) << '\n';
+			}
+		}
+
+		bool need_end = 0;
+		if(!command.empty()) {
+			terminal_run(command);
+			need_end = 1;
+		}
+		if(!sakurascript.empty()) {
+			linker.SEND({{L"ID", ghost_uid}, {L"Script", sakurascript}});
+			need_end = 1;
+		}
+		if(need_end) {
+			terminal_exit();
+			exit(0);
+		}
+		if(!disable_root_text && IsElevated())
+			out << SET_GRAY "Coooool, You're running terminal with " BOLD_TEXT(UNDERLINE_TEXT("root") " access") "!\n"
+				   "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
+				   "It will just run as it always does.\n\n" RESET_COLOR;
+		if(linker.Has_Event(L"Has_Event")) {
+			auto& err = [&]() -> base_out_t& {
+				if(disable_event_text)
+					return nullstream;
+				return ::err;
+			}();
+			err << SET_GRAY;
+			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))//在disable_event_text时完全可以不检查ShioriEcho
+				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
+					   "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
+			//ShioriEcho.GetResult
+			if(!linker.Has_Event(L"ShioriEcho.GetResult")) {
+				able_get_result = 0;
+				err << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
+					   "Terminal will not send get result event to your ghost and will not echo result.\n\n";
+			}
+			if(!linker.Has_Event(L"ShioriEcho.CommandComplete")) {
+				able_command_complete = 0;
+				err << "Event " SET_GREEN "ShioriEcho.CommandComplete" SET_GRAY " Not defined.\n"
+					   "Terminal will not send command complete event to your ghost.\n\n";
+			}
+			if(!linker.Has_Event(L"ShioriEcho.CommandUpdate")) {
+				able_command_update = 0;
+				err << "Event " SET_GREEN "ShioriEcho.CommandUpdate" SET_GRAY " Not defined.\n"
+					   "Terminal will not send command update event to your ghost.\n\n";
+			}
+			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") ||
+			   !linker.Has_Event(L"ShioriEcho.CommandHistory.Update") || !linker.Has_Event(L"ShioriEcho.CommandHistory.ForwardIndex")) {
+				able_command_history = 0;
+				err << "Your ghost needs to support all of the following events to support command history:\n"
+					   SET_GREEN
+					   "ShioriEcho.CommandHistory.New\n"
+					   "ShioriEcho.CommandHistory.Get\n"
+					   "ShioriEcho.CommandHistory.Update\n"
+					   "ShioriEcho.CommandHistory.ForwardIndex\n"
+					   SET_GRAY
+					   "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
+			}
+			if(!linker.Has_Event(L"ShioriEcho.TabPress")) {
+				able_tab_press = 0;
+				err << "Event " SET_GREEN "ShioriEcho.TabPress" SET_GRAY " Not defined.\n"
+					   "Terminal will not send tab press event to your ghost.\n\n";
+			}
+			if(!linker.Has_Event(L"ShioriEcho.CommandPrompt")) {
+				able_command_prompt = 0;
+				err << "Event " SET_GREEN "ShioriEcho.CommandPrompt" SET_GRAY " Not defined.\n"
+					   "Terminal will not send command prompt event to your ghost.\n\n";
+			}
+			err << RESET_COLOR;
+		}
+		else {
+			able_tab_press		  = 0;
+			able_command_update	  = 0;
+			able_command_complete = 0;
+			able_command_history  = 0;
+			able_command_prompt	  = 0;
+			able_get_result		  = 0;
+			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
+				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
+				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " event." RESET_COLOR "\n\n";
+		}
+	}
+	//terminal runnning
+	virtual bool terminal_run(const wstring& command) override {
+		linker.NOTYFY({{L"Event", L"ShioriEcho"},
+					   {L"ID", ghost_uid},
+					   {L"Reference0", command}});
+		if(able_get_result)
+			try {
+				floop {
+					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
+					{
+						const auto code = Result.get_code();
+						if(code == 404 || code == -1) {
+							err << RED_TEXT("Lost connection with target ghost.") << endline;
+							exit(1);
+						}
+					}
+					if(Result.has(L"Special")) {
+						out << do_transfer(Result[L"Special"]) << endline;
+						break;
+					}
+					else if(Result.has(L"Result")) {
+						out << Result[L"Result"] << endline;
+						if(Result.has(L"Type"))
+							out << "Type: " << Result[L"Type"] << endline;
+						break;
+					}
+					else if(Result.has(L"Type")) {
+						out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
+							<< to_ansi_colored_wstring(Result) << endline;
+						break;
+					}
+					else {
+						Sleep(1000);
+					}
+					if(Result.has(L"Status")) {
+						const auto& status = Result[L"Status"];
+						if(status == L"End")
+							return false;
+						else if(status == L"Continue")
+							break;
+					}
+				}
+			}
+			catch(const std::exception& a) {
+				err << RED_OUTPUT(a.what()) << endline;
+				exit(1);
+			}
+		return true;
+	}
+	//terminal exit
+	virtual void terminal_exit() override {
+		linker.NOTYFY({{L"Event", L"ShioriEcho.End"}});
+		SetConsoleTitleW(old_title.c_str());
+		SetConsoleIcon(old_icon_info);
+		simple_terminal::terminal_exit();
+	}
+	//other terminal events
+
+	//prompt
+	virtual std::wstring terminal_command_prompt() override {
+		if(able_command_prompt) {
+			auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandPrompt"}});
+			if(Result.has(L"Prompt"))
+				return Result[L"Prompt"];
+		}
+		return simple_terminal::terminal_command_prompt();
+	}
+	//completes
+	virtual editting_command_t terminal_tab_press(const editting_command_t& command, size_t tab_num) override {
+		if(!able_tab_press)
+			return command;
+		static size_t last_old_insert_index = 0;
+		if(!tab_num)
+			last_old_insert_index = command.insert_index;
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.TabPress"},
+									 {L"Reference0", command.command},
+									 {L"Reference1", to_wstring(command.insert_index)},
+									 {L"Reference2", to_wstring(tab_num)},
+									 {L"Reference3", to_wstring(last_old_insert_index)}});
+
+		editting_command_t Result_command = command;
+		if(Result.has(L"Command"))
+			Result_command.command = Result[L"Command"];
+		if(Result.has(L"InsertIndex"))
+			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
+		if(Result.has(L"OldInsertIndex"))
+			last_old_insert_index = (size_t)stoull(Result[L"OldInsertIndex"]);
+		return Result_command;
+	}
+	virtual editting_command_t terminal_command_complete_by_right(const editting_command_t& command) override {
+		if(!able_command_complete)
+			return command;
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandComplete"},
+									 {L"Reference0", command.command},
+									 {L"Reference1", to_wstring(command.insert_index)}});
+
+		editting_command_t Result_command = command;
+		if(Result.has(L"Command"))
+			Result_command.command = Result[L"Command"];
+		if(Result.has(L"InsertIndex"))
+			Result_command.insert_index = (size_t)stoull(Result[L"InsertIndex"]);
+		return Result_command;
+	}
+	//command update
+	virtual std::wstring terminal_command_update(std::wstring command) override {
+		if(!able_command_update)
+			return command;
+		{
+			//考虑到sstp极慢的速度，只在需要时更新command的色彩
+			HANDLE				  hInput = GetStdHandle(STD_INPUT_HANDLE);
+			INPUT_RECORD		  irBuf[16];
+			DWORD				  cNumRead;
+			//peek next input event
+			PeekConsoleInputW(hInput, irBuf, 16, &cNumRead);
+			for (size_t i = 0; i < cNumRead; ++i) {
+				const auto& ir = irBuf[i];
+				if (ir.EventType == WINDOW_BUFFER_SIZE_EVENT)
+					break;
+				else if(ir.EventType != KEY_EVENT)
+					continue;
+				const auto& key = ir.Event.KeyEvent;
+				if (!key.bKeyDown)
+					continue;
+				if(key.wVirtualKeyCode != VK_RETURN)
+					return command;
+				else
+					break;
+			}
+		}
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandUpdate"},
+									 {L"Reference0", command}});
+		if(Result.has(L"CommandForDisplay"))
+			return Result[L"CommandForDisplay"];
+		else
+			return command;
+	}
+	//command history events
+	virtual void terminal_command_history_new() override {
+		if(!able_command_history) {
+			simple_terminal::terminal_command_history_new();
+			return;
+		}
+		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.New"}});
+	}
+	virtual void terminal_command_history_update(const std::wstring& command, size_t before_num) override {
+		if(!able_command_history) {
+			simple_terminal::terminal_command_history_update(command, before_num);
+			return;
+		}
+		linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Update"},
+					   {L"Reference0", command},
+					   {L"Reference1", to_wstring(before_num)}});
+	}
+	virtual bool terminal_command_history_forward(size_t& index, size_t forward_num) override {
+		if(!able_command_history)
+			return simple_terminal::terminal_command_history_forward(index,forward_num);
+
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.ForwardIndex"},
+									 {L"Reference0", to_wstring(index)},
+									 {L"Reference1", to_wstring(forward_num)}});
+		if(Result.has(L"Index")) {
+			index = (size_t)stoull(Result[L"Index"]);
+			return true;
+		}
+		else
+			return false;
+	}
+	virtual std::wstring terminal_get_command_history(size_t before_num) override {
+		if(!able_command_history) {
+			return simple_terminal::terminal_get_command_history(before_num);
+		}
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.Get"},
+									 {L"Reference0", to_wstring(before_num)}});
+		if(Result.has(L"Command"))
+			return Result[L"Command"];
+		else
+			return {};
 	}
 };
 

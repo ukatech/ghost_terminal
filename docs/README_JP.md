@@ -15,7 +15,7 @@ ghost_terminalをシステム端末のように使用する
 テキスト
 
 ```text
-ghost terminal v13.8
+ghost terminal v13.9
 
 ghost_terminal [オプション]を指定します。
 オプションで指定します。
@@ -200,10 +200,12 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   - 戻り値
     - `X-SSTP-PassThru-Command` (オプション)  
       コマンドをこの内容で置き換える  
-- `ShioriEcho.CommandHistory.NextIndex`  
+- `ShioriEcho.CommandHistory.ForwardIndex`  
   ユーザが `↑` を押したときにインデックスが更新されるときのイベント  
   - `Reference0`
     履歴コマンドのインデックス（逆順、開始値0）  
+  - `Reference1`
+    `index`の値上がりが予想される量。  
   - 戻り値
     - `X-SSTP-PassThru-Index` (オプション)  
       インデックスをこの値に更新する  

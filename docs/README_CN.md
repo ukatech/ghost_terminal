@@ -13,7 +13,7 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 ## 命令行参数  
 
 ```text
-ghost terminal v13.8
+ghost terminal v13.9
 
 ghost_terminal [options]
 选项：
@@ -198,10 +198,12 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   - 返值
     - `X-SSTP-PassThru-Command`（可选）  
       将命令替换为此内容  
-- `ShioriEcho.CommandHistory.NextIndex`  
+- `ShioriEcho.CommandHistory.ForwardIndex`  
   用户按压`↑`时更新索引时事件  
   - `Reference0`
     历史命令的索引（倒序，起始值0）  
+  - `Reference1`
+    `index`被期望增加的值  
   - 返值
     - `X-SSTP-PassThru-Index`（可选）  
       将索引更新为此数值  

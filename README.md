@@ -17,7 +17,7 @@ Easy to use for ghost development
 ## Command line arguments  
 
 ```text
-ghost terminal v13.8
+ghost terminal v13.9
 
 ghost_terminal [options]
 options:
@@ -202,10 +202,12 @@ The rest of the events should only be defined if you want to change the default 
   - Return value
     - `X-SSTP-PassThru-Command` (optional)  
       Replace the command with this content  
-- `ShioriEcho.CommandHistory.NextIndex`  
+- `ShioriEcho.CommandHistory.ForwardIndex`  
   Event when the index is updated when the user presses `↑`  
   - `Reference0`
     Index of the history command (in reverse order, starting value 0)  
+  - `Reference1`
+    num of the value by which `index` is expected to increase  
   - Return value
     - `X-SSTP-PassThru-Index` (optional)  
       Update the index to this value  
