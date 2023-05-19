@@ -13,7 +13,7 @@ up/down切换命令，鼠标右键快速粘贴，支持tab补全（如果人格�
 ## 命令行参数  
 
 ```text
-ghost terminal v13.9
+ghost terminal v13.9.0.1
 
 ghost_terminal [options]
 选项：
@@ -107,7 +107,8 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
   - `Reference0`  
     终端所收集到的命令  
   - 返值  
-    忽略，**但言灵正常执行**  
+    如果你没有定义`ShioriEcho.GetResult`，你可以在这里返回`ShioriEcho.GetResult`所支持的任意返回值，它们同样会被terminal正确处理（除了可能返回值3，在没有定义`ShioriEcho.GetResult`的情况下`ShioriEcho`中什么都不返回只会进入下一个命令的获取）  
+    若你定义了`ShioriEcho.GetResult`，则这里的返回值将被忽略（**但言灵正常执行**）  
 - `ShioriEcho.GetResult`  
   查询求值结果事件  
   - 可能返值1  

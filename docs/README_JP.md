@@ -15,7 +15,7 @@ ghost_terminalをシステム端末のように使用する
 テキスト
 
 ```text
-ghost terminal v13.9
+ghost terminal v13.9.0.1
 
 ghost_terminal [オプション]を指定します。
 オプションで指定します。
@@ -109,7 +109,8 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   - `Reference0`  
     端末で収集したコマンド  
   - 戻り値  
-    無視される、**ただし、sakura scriptは正常に実行される**。  
+    もし`ShioriEcho.GetResult`を定義していない場合、ここで`ShioriEcho.GetResult`でサポートされている任意の返値を返すことができます。これらの返値は、ターミナルによって正しく処理されます（ただし、戻り値3は、`ShioriEcho.GetResult`を定義せずに何も返さない場合、次のコマンド取得に入ります）。  
+    `ShioriEcho.GetResult`を定義している場合、ここでの返値は無視されます（**ただし、sakura scriptは正常に実行される**）。  
 - `ShioriEcho.GetResult`  
   バリューリザルトイベントのクエリ  
   - 可能な戻り値 1  
@@ -197,15 +198,15 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   コマンドヒストリーを取得したときのイベント  
   - `Reference0`  
     履歴コマンドのインデックス（逆順、開始値0）
-  - 戻り値
+  - 戻り値  
     - `X-SSTP-PassThru-Command` (オプション)  
       コマンドをこの内容で置き換える  
 - `ShioriEcho.CommandHistory.ForwardIndex`  
   ユーザが `↑` を押したときにインデックスが更新されるときのイベント  
-  - `Reference0`
+  - `Reference0`  
     履歴コマンドのインデックス（逆順、開始値0）  
-  - `Reference1`
+  - `Reference1`  
     `index`の値上がりが予想される量。  
-  - 戻り値
+  - 戻り値  
     - `X-SSTP-PassThru-Index` (オプション)  
       インデックスをこの値に更新する  

@@ -38,9 +38,9 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "FileDescription", "terminal for every ghost!"
-            VALUE "FileVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2)
+            VALUE "FileVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2,VERSION_NUM3,VERSION_NUM4)
             VALUE "OriginalFilename", "ghost_terminal.exe"
-            VALUE "ProductVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2)
+            VALUE "ProductVersion", RC_VERSION_STRING(VERSION_NUM1,VERSION_NUM2,VERSION_NUM3,VERSION_NUM4)
             VALUE "ProductName", "ghost terminal"
         END
     END

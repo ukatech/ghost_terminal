@@ -133,7 +133,7 @@ protected:
 
 		auto& data_until_login = data_until_login_saver.get();
 		auto& args_info = data_until_login.args_info;
-		auto& fira_code_font_found = data_until_login.fira_code_font_found;
+		//auto& fira_code_font_found = data_until_login.fira_code_font_found;
 		auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
 		auto& ghost_path	= args_info.ghost_path;
@@ -227,17 +227,17 @@ protected:
 					else
 						//for each disable text split by ','
 						for(const auto& word: views::split(disable_text, L',')) {
-							const wstring_view disable_text{word.begin(), word.end()};
-							if(disable_text == L"root")
+							const wstring_view disable_text_type{word.begin(), word.end()};
+							if(disable_text_type == L"root")
 								disable_root_text = true;
-							else if(disable_text == L"event")
+							else if(disable_text_type == L"event")
 								disable_event_text = true;
-							else if(disable_text == L"WindowsTerminal")
+							else if(disable_text_type == L"WindowsTerminal")
 								disable_WindowsTerminal_text = true;
-							else if(disable_text == L"FiraCode")
+							else if(disable_text_type == L"FiraCode")
 								disable_FiraCode_text = true;
-							else if(disable_text.size())
-								err << SET_GRAY "Ignore unknown disable text: " << SET_PURPLE << disable_text << RESET_COLOR << endline;
+							else if(disable_text_type.size())
+								err << SET_GRAY "Ignore unknown disable text: " SET_PURPLE << disable_text_type << RESET_COLOR << endline;
 						}
 				}
 				else if(argv[i] == L"-h" || argv[i] == L"--help") {		  //help
@@ -652,13 +652,16 @@ protected:
 		if(!disable_FiraCode_text) {
 			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
 			//如果找不到，就提示一下
-			LOGFONTW lf;
-			lf.lfCharSet	 = DEFAULT_CHARSET;
-			lf.lfFaceName[0] = L'\0';
-			HDC hdc			 = GetDC(NULL);
-			if(hdc) {
-				EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
-				ReleaseDC(NULL, hdc);
+			{
+				LOGFONTW lf;//可以掠过0初始化：以下3个必须项目已被正确赋值
+				lf.lfCharSet	 = DEFAULT_CHARSET;
+				lf.lfFaceName[0] = L'\0';
+				lf.lfPitchAndFamily = 0;
+				HDC hdc			 = GetDC(NULL);
+				if(hdc) {
+					EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
+					ReleaseDC(NULL, hdc);
+				}
 			}
 			if(!fira_code_font_found)
 				out << SET_GRAY "You can use " SET_GREEN "Fira Code" SET_GRAY " font for a better experience in terminal and editor.\n"
@@ -749,7 +752,7 @@ protected:
 			if(!linker.Has_Event(L"ShioriEcho.GetResult")) {
 				able_get_result = 0;
 				err << "Event " SET_GREEN "ShioriEcho.GetResult" SET_GRAY " Not defined.\n"
-					   "Terminal will not send get result event to your ghost and will not echo result.\n\n";
+					   "Terminal will not send get result event to your ghost and will not echo the result if your ghost does not returns " SET_PURPLE "Result&Type" SET_GRAY " in the " SET_GREEN "ShioriEcho" SET_GRAY " event.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.CommandComplete")) {
 				able_command_complete = 0;
@@ -798,53 +801,69 @@ protected:
 		}
 	}
 	//terminal runnning
+	enum terminal_result_status {
+		Continue, Wait, End
+	};
+	terminal_result_status result_handle(const SSTP_ret_t& Result) {
+		{
+			const auto code = Result.get_code();
+			if(code == 404 || code == -1) {
+				err << RED_TEXT("Lost connection with target ghost.") << endline;
+				exit(1);
+			}
+		}
+		if(Result.has(L"Special")) {
+			out << do_transfer(Result[L"Special"]) << endline;
+			return Continue;
+		}
+		else if(Result.has(L"Result")) {
+			out << Result[L"Result"] << endline;
+			if(Result.has(L"Type"))
+				out << "Type: " << Result[L"Type"] << endline;
+			return Continue;
+		}
+		else if(Result.has(L"Type")) {
+			out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
+				<< to_ansi_colored_wstring(Result) << endline;
+			return Continue;
+		}
+		else if(Result.has(L"Status")) {
+			const auto& status = Result[L"Status"];
+			if(status == L"End")
+				return End;
+			else if(status == L"Continue")
+				return Continue;
+		}
+		else if(able_get_result)
+			return Wait;
+		else
+			return Continue;
+	}
 	virtual bool terminal_run(const wstring& command) override {
-		linker.NOTYFY({{L"Event", L"ShioriEcho"},
+		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho"},
 					   {L"ID", ghost_uid},
 					   {L"Reference0", command}});
 		if(able_get_result)
-			try {
-				floop {
-					auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
-					{
-						const auto code = Result.get_code();
-						if(code == 404 || code == -1) {
-							err << RED_TEXT("Lost connection with target ghost.") << endline;
-							exit(1);
-						}
-					}
-					if(Result.has(L"Special")) {
-						out << do_transfer(Result[L"Special"]) << endline;
-						break;
-					}
-					else if(Result.has(L"Result")) {
-						out << Result[L"Result"] << endline;
-						if(Result.has(L"Type"))
-							out << "Type: " << Result[L"Type"] << endline;
-						break;
-					}
-					else if(Result.has(L"Type")) {
-						out << "Has " GREEN_TEXT("Type") " but no " GREEN_TEXT("Result") " here:\n "
-							<< to_ansi_colored_wstring(Result) << endline;
-						break;
-					}
-					else {
-						Sleep(1000);
-					}
-					if(Result.has(L"Status")) {
-						const auto& status = Result[L"Status"];
-						if(status == L"End")
-							return false;
-						else if(status == L"Continue")
-							break;
-					}
+			floop {
+				auto GetResult = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
+				switch(result_handle(GetResult)) {
+				case Continue:
+					return true;
+				case Wait:
+					Sleep(1000);
+					break;
+				case End:
+					return false;
 				}
 			}
-			catch(const std::exception& a) {
-				err << RED_OUTPUT(a.what()) << endline;
-				exit(1);
+		else {
+			switch(result_handle(Result)) {
+			case Continue:
+				return true;
+			default:
+				return false;
 			}
-		return true;
+		}
 	}
 	//terminal exit
 	virtual void terminal_exit() override {
@@ -978,5 +997,11 @@ protected:
 };
 
 int wmain(int argc, wchar_t* argv[]) {
-	return ghost_terminal{}(argc, argv),0;
+	try {
+		return ghost_terminal{}(argc, argv), 0;
+	}
+	catch(const std::exception& a) {
+		err << RED_OUTPUT(a.what()) << endline;
+		exit(1);
+	}
 }
