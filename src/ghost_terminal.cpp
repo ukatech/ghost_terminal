@@ -1,4 +1,7 @@
-﻿#include "my-gists/windows/shell_base.hpp"
+﻿#define SMALLIO_OUT_ALWAYS_CONSOLE
+#define SMALLIO_DISABLE_INPUT
+
+#include "my-gists/windows/shell_base.hpp"
 #include "my-gists/windows/small_io.hpp"
 #include "my-gists/windows/InWindowsTerminal.hpp"
 #include "my-gists/windows/IsElevated.hpp"
@@ -133,8 +136,8 @@ protected:
 
 		auto& data_until_login = data_until_login_saver.get();
 		auto& args_info = data_until_login.args_info;
-		//auto& fira_code_font_found = data_until_login.fira_code_font_found;
-		auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
+		//const auto& fira_code_font_found = data_until_login.fira_code_font_found;
+		const auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
 		auto& ghost_path	= args_info.ghost_path;
 		auto& run_ghost		= args_info.run_ghost;
@@ -437,8 +440,8 @@ protected:
 
 		auto& data_until_login = data_until_login_saver.get();
 		auto& args_info = data_until_login.args_info;
-		auto& fira_code_font_found = data_until_login.fira_code_font_found;
-		auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
+		const auto& fira_code_font_found = data_until_login.fira_code_font_found;
+		const auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
 		//make destroy_flag as data is no longer needed after this function
 		auto destroy_flag = data_until_login_saver.make_destroy_flag();
