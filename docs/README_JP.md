@@ -1,7 +1,7 @@
 # ゴースト・ターミナル  
 
-![プレビュー画像]( ./preview.png )  
-もともとの試供品、今はある程度使えると思います（  
+![プレビュー画像]( https://github.com/ukatech/ghost_terminal/assets/31927825/bc02d62d-3a51-43e8-971f-45556aa97d3b )  
+もともとの試供品ですが、今はある程度使えると思います（  
 
 ## 使用方法  
 
@@ -27,7 +27,7 @@ ghost_terminal [オプション]を指定します。
   -gh, --ghost-hwnd <hwnd>             : 指定されたゴーストにHWNDでリンクする。
   -gp, --ghost-folder-path <path>      : 指定されたゴーストにフォルダーパスでリンクする。
   -r, --run-ghost                      : (それ/それ/それ/それ/それらの代名詞)が実行中でない場合、ゴーストを実行する。
-  -rwt, --register-to-windows-terminal : Windows端末に登録する（-g <ghost name> または -gp <ghost folder path> が必要）．
+  -rwt, --register-to-windows-terminal : Windows端末に登録する（-g <ghost name> または -gp <ghost folder path> が必要）
         -rwt-name <name>               : 指定された名前のWindows端末に登録する（-rwtとの組み合わせでのみ動作）。
         -rwt-icon <icon>               : 指定されたアイコン（PNGまたはICOのパス）でWindows端末に登録します（-rwtとの組み合わせのみ）。
   --disable-text <text types>|all      : 不要なテキスト（','で分割されたもの）またはそのすべてを無効にする。
@@ -35,7 +35,7 @@ ghost_terminal [オプション]を指定します。
         event                          : ゴーストのイベントがないときの警告文を表示しないようにします。
         WindowsTerminal                : Windows Terminalをインストールするか、このexeを-rwt (-g|-gp)で実行するように指示するテキストを無効化します。
         FiraCode                       : Fira Codeフォントを試していることを示すテキストを表示しないようにします。
-example:
+例です：
   ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
 
@@ -47,7 +47,10 @@ example:
 @echo on
 ```
 
-ghost_name には、さくら（`0`）側の名前、または `ShioriEcho.GetName` が返す `GhostName` 、または descript.txt に記述されたゴースト名を指定できます。  
+このコマンドは、このスクリプトファイルの中で、shiori関数を再読み込みするために使われています  
+ghost terminalは、[他のプログラム内の関数](https://github.com/Taromati2/yaya-shiori/blob/b6b21b514bcb55aacd3e0df881869e3f9cc1d7e3/aya5.vcxproj#L189)をフックするために使用できます.
+
+ghost_name には、さくら（`0`）側の名前、または `ShioriEcho.GetName` が返す `GhostName` 、または `descript.txt` に記述されたゴースト名を指定できます。  
 
 ## イベントリスト  
 
@@ -58,6 +61,15 @@ ghost_terminal は `X-SSTP-PassThru-*` を介して ghost と情報通信を行�
 ghost_terminalの出力は、プレーンテキストではなく、仮想端末のシーケンスでレンダリングされます。
 参考：[コンソールの仮想ターミナル シーケンス](https://learn.microsoft.com/ja-jp/windows/console/console-virtual-terminal-sequences)  
 文字色、背景色、フォントなど、端末の表示を制御するために使用できます。  
+例えば、Taroamti2 [この出力を使って、画面をクリアにする](https://github.com/Taromati2/ghost/blob/b6c6d66acd2ba91c3b843b6dd562bdf656d55796/master/dic/system/Debug.dic#L482L484)があります：  
+
+```c
+when 'cls'{
+	ShioriEcho.Special=CHR(27)+'[f'+CHR(27)+'[2J'
+}
+```
+
+![画像例](https://github.com/ukatech/ghost_terminal/assets/31927825/402d1145-378a-4001-bebb-714afb028432)
 
 ### デフォルトの動作  
 
@@ -87,7 +99,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     - `X-SSTP-PassThru-CustomLoginInfo` (optional)  
       設定された場合、端末はデフォルトのログイン情報を表示せず、この  
       この戻り値は、単純にエスケープされます：  
-      - `\n` は改行に変換されます。  
+      - `\n` は改行形に変換されます。  
       - `\t` はタブに変換されます。  
       - `\\` は `\` に変換される。  
 - `ShioriEcho.End`  
@@ -95,7 +107,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
   - 戻り値  
     無視される、**が、sakura scriptは正常に実行される**。  
 - `ShioriEcho.GetName`  
-  ghost_terminalが名前を取得したときのイベント  
+  ghost_terminalという名前を取得したときのイベント  
   - 戻り値  
     - `X-SSTP-PassThru-GhostName` (オプション)  
       ゴーストの名前を表示する  
@@ -122,7 +134,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     - `X-SSTP-PassThru-Special`  
       コンテンツを表示し、次のコマンドに進む fetch  
       この戻り値は、単純にエスケープされます：  
-      - `\n` は改行に変換されます。  
+      - `\n` は改行形に変換されます。  
       - `\t` はタブに変換されます。  
       - `\\` は `\` に変換される。  
   - 可能な戻り値 3  
@@ -148,7 +160,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     この一連のタブ補完の中で、最初にタブを押したときにカーソルがあったコマンドの最初の文字（開始値0）。  
   - 戻り値  
     - `X-SSTP-PassThru-Command` (オプション)  
-      コマンドをこの内容で置き換える  
+      コマンドをこの内容に置き換える  
     - `X-SSTP-PassThru-InsertIndex` (オプション)  
       カーソルをこの位置に移動させる（提供されない場合は変更しない）  
     - `X-SSTP-PassThru-OldInsertIndex`（オプション）  
@@ -164,8 +176,8 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
 - `ShioriEcho.CommandPrompt`  
   コマンドプロンプトが更新されたときのイベント  
   - 戻り値  
-    - X-SSTP-PassThru-Prompt` (オプション)  
-      表示されているコマンドプロンプトをこの内容で置き換える  
+    - `X-SSTP-PassThru-Prompt` (オプション)  
+      表示されているコマンドプロンプトをこの内容に置き換える  
       ゴーストはこのイベントでコマンドプロンプトを動的に変更することができます。  
 - `ShioriEcho.CommandComplete`  
   ユーザーがコマンドラインの右端にある `→` を押したときのイベント  
@@ -175,7 +187,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     カーソルがある位置で `→` を押したときのコマンドの最初の文字（開始値は0）。  
   - 戻り値  
     - `X-SSTP-PassThru-Command` (オプション)  
-      コマンドをこの内容で置き換える  
+      コマンドをこの内容に置き換える  
       ゴーストは、このイベントでコマンドをオートコンプリートすることができます。  
     - `X-SSTP-PassThru-InsertIndex` (オプション)  
       カーソルをこの位置に移動させる（提供されない場合はそのままにする）  
@@ -200,7 +212,7 @@ ghost_terminalの出力は、プレーンテキストではなく、仮想端末
     履歴コマンドのインデックス（逆順、開始値0）
   - 戻り値  
     - `X-SSTP-PassThru-Command` (オプション)  
-      コマンドをこの内容で置き換える  
+      コマンドをこの内容に置き換える  
 - `ShioriEcho.CommandHistory.ForwardIndex`  
   ユーザが `↑` を押したときにインデックスが更新されるときのイベント  
   - `Reference0`  

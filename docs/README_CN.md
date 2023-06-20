@@ -1,6 +1,6 @@
 # ghost_terminal  
 
-![预览图]( ./preview.png )  
+![预览图]( https://github.com/ukatech/ghost_terminal/assets/31927825/bc02d62d-3a51-43e8-971f-45556aa97d3b )  
 原试做品，现觉得有点用（  
 
 ## 用法  
@@ -28,12 +28,12 @@ ghost_terminal [options]
   -rwt, --register-to-windows-terminal : 注册到Windows终端（需要 -g <ghost name> 或 -gp <ghost文件夹路径>）。
         -rwt-name <name>               : 以指定的名字注册到Windows终端（只与-rwt一起工作）。
         -rwt-icon <icon>               : 用指定的图标（PNG或ICO路径）注册到Windows终端（只适用于-rwt）。
-  --disable-text <text types>|all      : disable some unnecessary text(split by ',') or all of them.
-        root                           : disables the easter egg text when running terminal as root.
-        event                          : disables the warning text when your ghost not having some events.
-        WindowsTerminal                : disables the text telling you to install Windows Terminal or run this exe with -rwt (-g|-gp).
-        FiraCode                       : disables the text telling you try Fira Code font.
-example:
+  --disable-text <text types>|all      : 禁用一些不必要的文本（用','分割）或所有的文本。
+        root                           : 禁用当以root身份运行终端时的彩蛋文本。
+        event                          : 当你的ghost没有某些事件时，禁用警告文本。
+        WindowsTerminal                : 禁用告诉你安装Windows终端或用-rwt(-g|-gp)运行这个exe的文本。
+        FiraCode                       : 禁用告诉你尝试Fira Code字体的文本。
+例子：
   ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
 
@@ -45,7 +45,10 @@ example:
 @echo on
 ```
 
-ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`，或descript.txt中的ghost名称  
+这个脚本文件中以此命令实现了重载shiori的功能  
+ghost terminal可以被用于挂钩[其他程序中的功能](https://github.com/Taromati2/yaya-shiori/blob/b6b21b514bcb55aacd3e0df881869e3f9cc1d7e3/aya5.vcxproj#L189)。
+
+ghost_name 可以是Sakura（`\0`）端名称，或`ShioriEcho.GetName`返回的`GhostName`，或`descript.txt`中的ghost名称  
 
 ## 事件列表  
 
@@ -56,6 +59,15 @@ ghost_terminal通过`X-SSTP-PassThru-*`进行与人格间的信息沟通（见[�
 任何ghost_terminal的输出都将经过虚拟终端序列渲染，而不是普通的文本。  
 参考：[虚拟终端序列](https://learn.microsoft.com/zh-cn/windows/console/console-virtual-terminal-sequences)  
 你可以使用它来控制终端的显示效果，如文字颜色、背景色、字体等。  
+比如Taroamti2[以此输出实现清屏](https://github.com/Taromati2/ghost/blob/b6c6d66acd2ba91c3b843b6dd562bdf656d55796/master/dic/system/Debug.dic#L482L484)：  
+
+```c
+when 'cls'{
+	ShioriEcho.Special=CHR(27)+'[f'+CHR(27)+'[2J'
+}
+```
+
+![示例图片](https://github.com/ukatech/ghost_terminal/assets/31927825/402d1145-378a-4001-bebb-714afb028432)
 
 ### 默认行为  
 

@@ -1,12 +1,12 @@
 # ghost_terminal  
 
-![preview image](./preview.png)  
+![preview image]( https://github.com/ukatech/ghost_terminal/assets/31927825/bc02d62d-3a51-43e8-971f-45556aa97d3b )  
 Original trial product, now finding it somewhat useful (  
 
 ## Usage  
 
 Use ghost_terminal like a system terminal  
-up/down toggle command, right mouse button for quick paste, supports tab completion (if supported by ghost)  
+up/down toggle command, right mouse button for quick paste, support tab completion (if supported by ghost)  
 Type in the expressions supported by your ghost and then evaluate them!  
 Easy to use for ghost development  
 
@@ -30,9 +30,9 @@ options:
         -rwt-icon <icon>                : registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with -rwt).
   --disable-text <text types>|all       : disable some unnecessary text(split by ',') or all of them.
         root                            : disables the easter egg text when running terminal as root.
-        event                           : disables the warning text when your ghost not having some events.
+        event                           : disables the warning text when your ghost is not having events.
         WindowsTerminal                 : disables the text telling you to install Windows Terminal or run this exe with -rwt (-g|-gp).
-        FiraCode                        : disables the text telling you try Fira Code font.
+        FiraCode                        : disables the text telling you to try the Fira Code font.
 example:
   ghost-terminal -g "Taromati2" -rwt --disable-text event,WindowsTerminal,FiraCode
 ```
@@ -45,7 +45,10 @@ For example:
 @echo on
 ```
 
-ghost_name can be the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`, or the ghost name in descript.txt  
+This command is used in this script file to reload the shiori function  
+ghost terminal can be used to hook [functions in other programs](https://github.com/Taromati2/yaya-shiori/blob/b6b21b514bcb55aacd3e0df881869e3f9cc1d7e3/aya5.vcxproj#L189).
+
+ghost_name can be the name of the Sakura (`\0`) side, or the `GhostName` returned by `ShioriEcho.GetName`, or the ghost name in the `descript.txt`  
 
 ## Event list  
 
@@ -56,17 +59,26 @@ ghost_terminal communicates information with ghost via `X-SSTP-PassThru-*` (see 
 Any ghost_terminal output will be rendered by a virtual terminal sequence, rather than plain text.  
 Reference: [Console Virtual Terminal Sequences](https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences)  
 You can use it to control the display of the terminal, such as text colour, background colour, font, etc.  
+For example, Taroamti2 [use this output to clear the screen](https://github.com/Taromati2/ghost/blob/b6c6d66acd2ba91c3b843b6dd562bdf656d55796/master/dic/system/Debug.dic#L482L484):  
+
+```c
+when 'cls'{
+	ShioriEcho.Special=CHR(27)+'[f'+CHR(27)+'[2J'
+}
+```
+
+![Example image](https://github.com/ukatech/ghost_terminal/assets/31927825/402d1145-378a-4001-bebb-714afb028432)
 
 ### Default behaviour  
 
 Most of the events in the following events will use the default behaviour if not implemented by ghost  
-In other words, **if you want your ghost to support terminal, you only need to implement the `ShioriEcho` event.**  
+In other words, **if you want your ghost to support the terminal, you only need to implement the `ShioriEcho` event.**  
 The rest of the events should only be defined if you want to change the default behaviour or provide a richer experience  
 
 ### Start/End
 
 - `ShioriEcho.Begin`  
-  ghost_terminal event when this ghost starts  
+  ghost_terminal event when this ghost starts.  
   - `Reference0`  
     Terminal version  
   - `Reference1`  
@@ -81,10 +93,10 @@ The rest of the events should only be defined if you want to change the default 
       Set the terminal icon (PNG or ICO path)  
     - `X-SSTP-PassThru-SmallIcon` (optional)  
       Set the terminal small icon (PNG or ICO path)  
-      If not set, will be consistent with `X-SSTP-PassThru-Icon`  
+      If not set, it will be consistent with `X-SSTP-PassThru-Icon`  
     - `X-SSTP-PassThru-CustomLoginInfo` (optional)  
-      If set, the terminal will not display the default login information, but will display the content of this  
-      This return value will be simply escaped:  
+      If set up, the terminal will not display the default login information, but will display the content of this  
+      This return value will simply escape:  
       - `\n` will be converted to a newline  
       - `\t` will be converted to tabs  
       - `\\` will be converted to `\`  
@@ -115,11 +127,11 @@ The rest of the events should only be defined if you want to change the default 
     - `X-SSTP-PassThru-Result`  
       Display the content and go to the next command to fetch  
     - `X-SSTP-PassThru-Type` (optional)  
-      Additional information: value type  
+      Additional info: value type  
   - Possible return value 2  
     - `X-SSTP-PassThru-Special`  
       Show content and go to the next command fetch  
-      This return value will be simply escaped:  
+      This return value will simply escape:  
       - `\n` will be converted to a newline  
       - `\t` will be converted to tabs  
       - `\\` will be converted to `\`  
@@ -128,20 +140,20 @@ The rest of the events should only be defined if you want to change the default 
       Wait 1 second and re-initiate `ShioriEcho.GetResult`  
   - Other
     - `X-SSTP-PassThru-State`  
-      This return value can be superimposed on the above return value  
-      If it is `End`, the terminal terminates  
+      The return value can be superimposed on the above return value  
+      If it is `End`, the terminal terminates.  
       If it is `Continue`, the terminal does not display any content and goes to the next command acquisition  
 
 ### Other  
 
 - `ShioriEcho.TabPress`  
-  command completes the event by tab  
+  command completes the event in tab  
   - `Reference0`  
     Commands collected by the terminal  
   - `Reference1`  
     The first character of the command where the cursor was when the tab was pressed (starting value 0)  
   - `Reference2`  
-    The first consecutive times the user pressed tab (starting value 0)  
+    The first consecutive time the user pressed the tab (starting value 0)  
   - `Reference3`  
     The first character of the command in this series of tab complements where the cursor was when the tab was first pressed (starting value 0)  
   - Return value  
@@ -152,7 +164,7 @@ The rest of the events should only be defined if you want to change the default 
     - `X-SSTP-PassThru-OldInsertIndex` (optional)  
       Update the subsequent `Reference3` to this content, valid until the end of the series of tab completions (or leave it unchanged if not provided)  
 - `ShioriEcho.CommandUpdate`  
-  Event when command is updated  
+  Event when the command is updated  
   - `Reference0`  
     Commands collected by the terminal  
   - Return value  
@@ -170,11 +182,11 @@ The rest of the events should only be defined if you want to change the default 
   - `Reference0`  
     Commands collected by the terminal  
   - `Reference1`  
-    The first character of the command where the cursor was when `→` was pressed (starting value 0)  
+    The first character of the command is where the cursor was when `→` was pressed (starting value 0)  
   - Return value  
     - `X-SSTP-PassThru-Command` (optional)  
       Replace the command with this content  
-      ghost can auto-complete commands with this event  
+      Ghosts can auto-complete commands with this event  
     - `X-SSTP-PassThru-InsertIndex` (optional)  
       Move the cursor to this position (or leave it unchanged if not provided)  
 
