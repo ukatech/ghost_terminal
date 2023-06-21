@@ -119,8 +119,8 @@ The rest of the events should only be defined if you want to change the default 
   - `Reference0`  
     Commands collected by the terminal  
   - Return Value  
-    If you have not defined "ShioriEcho.GetResult", you can return any of the return values supported by "ShioriEcho.GetResult" here, which will also be correctly processed by the terminal (except for return value 3, which will enter the next command acquisition when "ShioriEcho" does not return anything without defining "ShioriEcho.GetResult").
-    If you have defined "ShioriEcho.GetResult", the return value here will be ignored (**but Sakura Script will execute normally**).  
+    If you have not defined `ShioriEcho.GetResult`, you can return any of the return values supported by `ShioriEcho.GetResult` here, which will also be correctly processed by the terminal (except for return value 3, which will enter the next command acquisition when `ShioriEcho` does not return anything without defining `ShioriEcho.GetResult`).
+    If you have defined `ShioriEcho.GetResult`, the return value here will be ignored (**but Sakura Script will execute normally**).  
 - `ShioriEcho.GetResult`  
   Query for value result event  
   - Possible return value 1  
