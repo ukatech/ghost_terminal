@@ -839,8 +839,7 @@ protected:
 		}
 		else if(able_get_result)
 			return Wait;
-		else
-			return Continue;
+		return Continue;
 	}
 	virtual bool terminal_run(const wstring& command) override {
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho"},
@@ -928,25 +927,11 @@ protected:
 			return command;
 		{
 			//考虑到sstp极慢的速度，只在需要时更新command的色彩
-			HANDLE				  hInput = GetStdHandle(STD_INPUT_HANDLE);
-			INPUT_RECORD		  irBuf[16];
-			DWORD				  cNumRead;
-			//peek next input event
-			PeekConsoleInputW(hInput, irBuf, 16, &cNumRead);
-			for (size_t i = 0; i < cNumRead; ++i) {
-				const auto& ir = irBuf[i];
-				if (ir.EventType == WINDOW_BUFFER_SIZE_EVENT)
-					break;
-				else if(ir.EventType != KEY_EVENT)
-					continue;
-				const auto& key = ir.Event.KeyEvent;
-				if (!key.bKeyDown)
-					continue;
-				if(key.wVirtualKeyCode != VK_RETURN)
-					return command;
-				else
-					break;
-			}
+			const auto next_char = terminal_n::peek_key_input();
+			if(next_char == L'\r' || next_char == L'\n')
+				;//fall through
+			else if(next_char)
+				return command;
 		}
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandUpdate"},
 									 {L"Reference0", command}});

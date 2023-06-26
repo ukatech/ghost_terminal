@@ -1,7 +1,7 @@
 ﻿#define VERSION_NUM1 13
 #define VERSION_NUM2 9
 #define VERSION_NUM3 0
-#define VERSION_NUM4 1
+#define VERSION_NUM4 2
 
 #define STRINGIZER_HELPER(a) #a
 #define STRINGIZER(a) STRINGIZER_HELPER(a)
