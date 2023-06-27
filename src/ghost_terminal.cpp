@@ -23,8 +23,8 @@
 #include <string_view>
 #include <ranges>
 
-#include <shlwapi.h>//PathFileExistsW
-#include <shlobj_core.h>//SHCreateDirectoryEx
+#include <shlwapi.h>		   //PathFileExistsW
+#include <shlobj_core.h>	   //SHCreateDirectoryEx
 
 //lib of PathFileExists & SHCreateDirectoryEx
 #pragma comment(lib, "shlwapi.lib")
@@ -38,7 +38,7 @@ using namespace SSTP_link_n;
 using namespace terminal_n;
 
 wstring to_command_path_string(wstring str) noexcept {
-	if(str.ends_with('\\'))// 考虑"path\"，很明显\"会构成转义序列
+	if(str.ends_with('\\'))		  // 考虑"path\"，很明显\"会构成转义序列
 		str.pop_back();
 	return str;
 }
@@ -71,29 +71,29 @@ private:
 		bool disable_WindowsTerminal_text = 0;
 		bool disable_FiraCode_text		  = 0;
 	};
-	struct data_until_login_t{//保持直到终端登录的数据
+	struct data_until_login_t {		  //保持直到终端登录的数据
 		args_info_t args_info;
-		bool		 fira_code_font_found = 0;
-		wstring		 LOCALAPPDATA		  = _wgetenv(L"LOCALAPPDATA");
+		bool		fira_code_font_found = 0;
+		wstring		LOCALAPPDATA		 = _wgetenv(L"LOCALAPPDATA");
 	};
 	struct data_until_login_saver_t {
 		data_until_login_t* data_until_login_ptr;
-		void take_new(){
-			data_until_login_ptr=new data_until_login_t;
+		void				take_new() {
+			   data_until_login_ptr = new data_until_login_t;
 		}
-		data_until_login_t& get(){
+		data_until_login_t& get() noexcept {
 			return *data_until_login_ptr;
 		}
-		struct destroy_flag_t{
+		struct destroy_flag_t {
 			data_until_login_t* data_until_login_ptr;
-			~destroy_flag_t(){
+			~destroy_flag_t() {
 				delete data_until_login_ptr;
 			}
 		};
-		destroy_flag_t make_destroy_flag(){
+		destroy_flag_t make_destroy_flag() noexcept {
 			return destroy_flag_t{data_until_login_ptr};
 		}
-	}data_until_login_saver;
+	} data_until_login_saver;
 
 	//ghost info & linker
 	SSTP_link_t linker{{{L"Charset", L"UTF-8"},
@@ -102,8 +102,8 @@ private:
 	wstring		ghost_uid;
 
 	//old terminal info for restore
-	wstring		 old_title;
-	ICON_INFO_t	 old_icon_info;
+	wstring		old_title;
+	ICON_INFO_t old_icon_info;
 
 	//ables
 	bool able_get_result	   = 1;
@@ -114,8 +114,8 @@ private:
 	bool able_command_prompt   = 1;
 
 private:
-	static int CALLBACK FiraCode_Finder(const LOGFONTW *lpelfe, const TEXTMETRICW *lpntme, DWORD FontType, LPARAM lParam)noexcept{
-		auto& self = *(ghost_terminal*)lParam;
+	static int CALLBACK FiraCode_Finder(const LOGFONTW* lpelfe, [[maybe_unused]] const TEXTMETRICW* lpntme, [[maybe_unused]] DWORD FontType, LPARAM lParam) noexcept {
+		auto&			   self		 = *(ghost_terminal*)lParam;
 		const wstring_view font_name = lpelfe->lfFaceName;
 		if(font_name.find(L"Fira Code") == 0) {
 			self.data_until_login_saver.get().fira_code_font_found = true;
@@ -123,6 +123,7 @@ private:
 		}
 		return 1;
 	}
+
 protected:
 	//before terminal run
 	virtual void before_terminal_login() override {
@@ -135,7 +136,7 @@ protected:
 		data_until_login_saver.take_new();
 
 		auto& data_until_login = data_until_login_saver.get();
-		auto& args_info = data_until_login.args_info;
+		auto& args_info		   = data_until_login.args_info;
 		//const auto& fira_code_font_found = data_until_login.fira_code_font_found;
 		const auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
@@ -161,8 +162,8 @@ protected:
 					i++;
 					if(i < argc)
 						command = argv[i];
-					else{
-						err << RED_OUTPUT("No command after "<< argv[i - 1] << ".") << endline;
+					else {
+						err << RED_OUTPUT("No command after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 				}
@@ -170,8 +171,8 @@ protected:
 					i++;
 					if(i < argc)
 						sakurascript = argv[i];
-					else{
-						err << RED_OUTPUT("No sakura script after "<< argv[i - 1] << ".") << endline;
+					else {
+						err << RED_OUTPUT("No sakura script after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 				}
@@ -179,8 +180,8 @@ protected:
 					i++;
 					if(i < argc)
 						ghost_link_to = argv[i];
-					else{
-						err << RED_OUTPUT("No ghost name after "<< argv[i - 1] << ".") << endline;
+					else {
+						err << RED_OUTPUT("No ghost name after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 				}
@@ -188,8 +189,8 @@ protected:
 					i++;
 					if(i < argc)
 						ghost_hwnd = (HWND)wcstoll(argv[i].c_str(), nullptr, 10);
-					else{
-						err << RED_OUTPUT("No ghost hwnd after "<< argv[i - 1] << ".") << endline;
+					else {
+						err << RED_OUTPUT("No ghost hwnd after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 				}
@@ -197,8 +198,8 @@ protected:
 					i++;
 					if(i < argc)
 						ghost_path = make_ghost_path(argv[i]);
-					else{
-						err << RED_OUTPUT("No ghost folder path after "<< argv[i - 1] << ".") << endline;
+					else {
+						err << RED_OUTPUT("No ghost folder path after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 				}
@@ -220,13 +221,13 @@ protected:
 				}
 				else if(argv[i] == L"--disable-text") {
 					i++;
-					if(i >= argc){
-						err << RED_OUTPUT("No disable text types after "<< argv[i - 1] << ".") << endline;
+					if(i >= argc) {
+						err << RED_OUTPUT("No disable text types after " << argv[i - 1] << ".") << endline;
 						exit(1);
 					}
 					const wstring& disable_text = argv[i];
 					if(disable_text == L"all")
-						disable_root_text=disable_event_text=disable_WindowsTerminal_text=disable_FiraCode_text=true;
+						disable_root_text = disable_event_text = disable_WindowsTerminal_text = disable_FiraCode_text = true;
 					else
 						//for each disable text split by ','
 						for(const auto& word: views::split(disable_text, L',')) {
@@ -244,29 +245,27 @@ protected:
 						}
 				}
 				else if(argv[i] == L"-h" || argv[i] == L"--help") {		  //help
-					out <<"ghost terminal " VERSION_STRING_WITH_V "\n\n"<<
-						  LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
-						  "options:\n"
-						  "  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message " SET_RED "and exits.\n"
-						  "  " SET_GREEN "-v" SET_YELLOW "," SET_GREEN " --version" SET_WHITE "                         : " SET_GRAY "shows the version number " SET_RED "and exits.\n"
-						  "  " SET_GREEN "-c" SET_YELLOW "," SET_GREEN " --command " SET_PURPLE "<command>" SET_WHITE "               : " SET_GRAY "runs the specified command " SET_RED "and exits.\n"
-						  "  " SET_GREEN "-s" SET_YELLOW "," SET_GREEN " --sakura-script " SET_PURPLE "<script>" SET_WHITE "          : " SET_GRAY "runs the specified Sakura script " SET_RED "and exits.\n"
-						  "  " SET_GREEN "-g" SET_YELLOW "," SET_GREEN " --ghost " SET_PURPLE "<ghost>" SET_WHITE "                   : " SET_GRAY "links to the specified ghost by name.\n"
-						  "  " SET_GREEN "-gh" SET_YELLOW "," SET_GREEN " --ghost-hwnd " SET_PURPLE "<hwnd>" SET_WHITE "              : " SET_GRAY "links to the specified ghost by HWND.\n"
-						  "  " SET_GREEN "-gp" SET_YELLOW "," SET_GREEN " --ghost-folder-path " SET_PURPLE "<path>" SET_WHITE "       : " SET_GRAY "links to the specified ghost by folder path.\n"
-						  "  " SET_GREEN "-r" SET_YELLOW "," SET_GREEN " --run-ghost" SET_WHITE "                       : " SET_GRAY "runs the ghost if (it/she/he/them/other pronouns) is not currently running.\n"
-						  "  " SET_GREEN "-rwt" SET_YELLOW "," SET_GREEN " --register-to-windows-terminal" SET_WHITE "  : " SET_GRAY "registers to the Windows terminal (requires " SET_GREEN "-g" SET_PURPLE " <ghost name>" SET_GRAY " or " SET_GREEN "-gp" SET_PURPLE " <ghost folder path>" SET_GRAY ").\n"
-						  "        " SET_GREEN "-rwt-name " SET_PURPLE "<name>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified name (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
-						  "        " SET_GREEN "-rwt-icon " SET_PURPLE "<icon>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
-						  "  " SET_GREEN "--disable-text " SET_PURPLE "<text types>" SET_GRAY "|" SET_PURPLE "all" SET_WHITE "       : " SET_GRAY "disable some unnecessary text(split by '" SET_PURPLE "," SET_GRAY "') or all of them.\n"
-						  "        " SET_PURPLE "root" SET_WHITE "                            : " SET_GRAY "disables the " BLINK_TEXT("easter egg") " text when running terminal as root.\n"
-						  "        " SET_PURPLE "event" SET_WHITE "                           : " SET_GRAY "disables the warning text when your ghost not having some events.\n"
-						  "        " SET_PURPLE "WindowsTerminal" SET_WHITE "                 : " SET_GRAY "disables the text telling you to install " UNDERLINE_TEXT("Windows Terminal") " or run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ").\n"
-						  "        " SET_PURPLE "FiraCode" SET_WHITE "                        : " SET_GRAY "disables the text telling you try " UNDERLINE_TEXT("Fira Code") " font.\n"
-						  RESET_COLOR
-						  "example:\n"
-						  "  " SET_LIGHT_YELLOW "ghost-terminal " SET_GREEN "-g " SET_PURPLE "\"Taromati2\" " SET_GREEN "-rwt --disable-text " SET_PURPLE "event,WindowsTerminal,FiraCode" RESET_COLOR "\n"
-						  RESET_COLOR;
+					out << "ghost terminal " VERSION_STRING_WITH_V "\n\n"
+						<< LIGHT_YELLOW_OUTPUT(argv[0]) << SET_CYAN " [options]\n" RESET_COLOR
+						"options:\n"
+						"  " SET_GREEN "-h" SET_YELLOW "," SET_GREEN " --help" SET_WHITE "                            : " SET_GRAY "shows this help message " SET_RED "and exits.\n"
+						"  " SET_GREEN "-v" SET_YELLOW "," SET_GREEN " --version" SET_WHITE "                         : " SET_GRAY "shows the version number " SET_RED "and exits.\n"
+						"  " SET_GREEN "-c" SET_YELLOW "," SET_GREEN " --command " SET_PURPLE "<command>" SET_WHITE "               : " SET_GRAY "runs the specified command " SET_RED "and exits.\n"
+						"  " SET_GREEN "-s" SET_YELLOW "," SET_GREEN " --sakura-script " SET_PURPLE "<script>" SET_WHITE "          : " SET_GRAY "runs the specified Sakura script " SET_RED "and exits.\n"
+						"  " SET_GREEN "-g" SET_YELLOW "," SET_GREEN " --ghost " SET_PURPLE "<ghost>" SET_WHITE "                   : " SET_GRAY "links to the specified ghost by name.\n"
+						"  " SET_GREEN "-gh" SET_YELLOW "," SET_GREEN " --ghost-hwnd " SET_PURPLE "<hwnd>" SET_WHITE "              : " SET_GRAY "links to the specified ghost by HWND.\n"
+						"  " SET_GREEN "-gp" SET_YELLOW "," SET_GREEN " --ghost-folder-path " SET_PURPLE "<path>" SET_WHITE "       : " SET_GRAY "links to the specified ghost by folder path.\n"
+						"  " SET_GREEN "-r" SET_YELLOW "," SET_GREEN " --run-ghost" SET_WHITE "                       : " SET_GRAY "runs the ghost if (it/she/he/them/other pronouns) is not currently running.\n"
+						"  " SET_GREEN "-rwt" SET_YELLOW "," SET_GREEN " --register-to-windows-terminal" SET_WHITE "  : " SET_GRAY "registers to the Windows terminal (requires " SET_GREEN "-g" SET_PURPLE " <ghost name>" SET_GRAY " or " SET_GREEN "-gp" SET_PURPLE " <ghost folder path>" SET_GRAY ").\n"
+						"        " SET_GREEN "-rwt-name " SET_PURPLE "<name>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified name (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
+						"        " SET_GREEN "-rwt-icon " SET_PURPLE "<icon>" SET_WHITE "                : " SET_GRAY "registers to the Windows terminal with the specified icon (PNG or ICO path) (only works with " SET_GREEN "-rwt" SET_GRAY ").\n"
+						"  " SET_GREEN "--disable-text " SET_PURPLE "<text types>" SET_GRAY "|" SET_PURPLE "all" SET_WHITE "       : " SET_GRAY "disable some unnecessary text(split by '" SET_PURPLE "," SET_GRAY "') or all of them.\n"
+						"        " SET_PURPLE "root" SET_WHITE "                            : " SET_GRAY "disables the " BLINK_TEXT("easter egg") " text when running terminal as root.\n"
+						"        " SET_PURPLE "event" SET_WHITE "                           : " SET_GRAY "disables the warning text when your ghost not having some events.\n"
+						"        " SET_PURPLE "WindowsTerminal" SET_WHITE "                 : " SET_GRAY "disables the text telling you to install " UNDERLINE_TEXT("Windows Terminal") " or run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ").\n"
+						"        " SET_PURPLE "FiraCode" SET_WHITE "                        : " SET_GRAY "disables the text telling you try " UNDERLINE_TEXT("Fira Code") " font.\n" RESET_COLOR
+						"example:\n"
+						"  " SET_LIGHT_YELLOW "ghost-terminal " SET_GREEN "-g " SET_PURPLE "\"Taromati2\" " SET_GREEN "-rwt --disable-text " SET_PURPLE "event,WindowsTerminal,FiraCode" RESET_COLOR "\n" RESET_COLOR;
 					exit(0);
 				}
 				else if(argv[i] == L"-v" || argv[i] == L"--version") {
@@ -381,7 +380,7 @@ protected:
 				if(ghost_path.empty())
 					start_command = L'"' + to_command_path_string(my_name) + L"\" -g \"" + ghost_link_to + L"\" -r";
 				else {
-					auto simplified_ghost_path = ghost_path.substr(0, ghost_path.size() - 14);//"\\ghost\\master\\"
+					auto simplified_ghost_path = ghost_path.substr(0, ghost_path.size() - 14);		 //"\\ghost\\master\\"
 					start_command			   = L'"' + to_command_path_string(my_name) + L"\" -gp \"" + simplified_ghost_path + L"\" -r";
 				}
 				if(disable_root_text | disable_event_text | disable_WindowsTerminal_text | disable_FiraCode_text) {
@@ -426,7 +425,8 @@ protected:
 			wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 			if(!PathFileExistsW(wt_path.c_str())) {
 				err << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
-					   "You can download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") ">." RESET_COLOR << endline;
+																			   "You can download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") ">." RESET_COLOR
+					<< endline;
 			}
 			else {
 				//run wt
@@ -438,10 +438,10 @@ protected:
 	virtual void terminal_login() override {
 		SFMO_t fmobj;
 
-		auto& data_until_login = data_until_login_saver.get();
-		auto& args_info = data_until_login.args_info;
+		auto&		data_until_login	 = data_until_login_saver.get();
+		auto&		args_info			 = data_until_login.args_info;
 		const auto& fira_code_font_found = data_until_login.fira_code_font_found;
-		const auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
+		const auto& LOCALAPPDATA		 = data_until_login.LOCALAPPDATA;
 
 		//make destroy_flag as data is no longer needed after this function
 		auto destroy_flag = data_until_login_saver.make_destroy_flag();
@@ -471,7 +471,7 @@ protected:
 			if(!condition()) {
 				out << LIGHT_YELLOW_OUTPUT("Waiting for " << condition_str << "...") << flush;
 				reprinter_t reprinter;
-				size_t				  time = 0;
+				size_t		time = 0;
 				floop {
 					reprinter(L"" YELLOW_TEXT("(" + to_wstring(time) + L'/' + to_wstring(timeout) + L"s)"));
 					Sleep(1000);
@@ -507,7 +507,8 @@ protected:
 			fmobj.Update_info();
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map.size() > 0;
-			}, L"FMO initialized");
+			},
+				   L"FMO initialized");
 			if(!ghost_link_to.empty())
 				waiter([&] {
 					if(fmobj.Update_info())
@@ -517,7 +518,8 @@ protected:
 								return ghost_hwnd = tmp_hwnd;
 						}
 					return HWND{0};
-				}, L"ghost hwnd created");
+				},
+					   L"ghost hwnd created");
 		};
 		if(ghost_hwnd)
 			goto link_to_ghost;
@@ -562,25 +564,25 @@ protected:
 				}
 				else {
 					out << LIGHT_YELLOW_TEXT("Select the ghost you want to log into. [Up/Down/Enter]\n");
-					HANDLE				  hInput = GetStdHandle(STD_INPUT_HANDLE);
-					INPUT_RECORD		  ir;
-					DWORD				  cNumRead;
-					reprinter_t			  reprinter;
-					const auto			  pbg = fmobj.info_map.begin();
-					const auto			  ped = fmobj.info_map.end();
-					const auto psize=fmobj.info_map.size();
-					auto				  p	  = pbg;
+					HANDLE		 hInput = GetStdHandle(STD_INPUT_HANDLE);
+					INPUT_RECORD ir;
+					DWORD		 cNumRead;
+					reprinter_t	 reprinter;
+					const auto	 pbg   = fmobj.info_map.begin();
+					const auto	 ped   = fmobj.info_map.end();
+					const auto	 psize = fmobj.info_map.size();
+					auto		 p	   = pbg;
 					while(!ghost_hwnd) {
 						reprinter(p->second[L"name"]);
 						ReadConsoleInputW(hInput, &ir, 1, &cNumRead);
 						switch(ir.EventType) {
-							case KEY_EVENT:
-								break;
-							default:
-								//ignore
-								continue;
+						case KEY_EVENT:
+							break;
+						default:
+							//ignore
+							continue;
 						}
-						const auto&key=ir.Event.KeyEvent;
+						const auto& key = ir.Event.KeyEvent;
 						if(!key.bKeyDown)
 							continue;
 						//esc
@@ -593,7 +595,7 @@ protected:
 						}
 						//tab|right|down
 						if(key.wVirtualKeyCode == VK_TAB || key.wVirtualKeyCode == VK_RIGHT || key.wVirtualKeyCode == VK_DOWN) {
-							auto size=key.wRepeatCount%psize;
+							auto size = key.wRepeatCount % psize;
 							while(size--) {
 								p++;
 								if(p == ped)
@@ -602,7 +604,7 @@ protected:
 						}
 						//up|delete|left
 						if(key.wVirtualKeyCode == VK_UP || key.wVirtualKeyCode == VK_DELETE || key.wVirtualKeyCode == VK_LEFT) {
-							auto size=key.wRepeatCount%psize;
+							auto size = key.wRepeatCount % psize;
 							while(size--) {
 								if(p == pbg)
 									p = ped;
@@ -637,17 +639,19 @@ protected:
 			start_ghost();
 			goto link_to_ghost;
 		}
-		if(sakurascript.empty())//发送ss不需要shiori就绪
+		if(sakurascript.empty())	   //发送ss不需要shiori就绪
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
-			}, L"ghost's shiori ready");
+			},
+				   L"ghost's shiori ready");
 
 		if(!disable_WindowsTerminal_text && !InWindowsTerminal()) {
 			if(!register2wt) {
 				const wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 				if(!PathFileExistsW(wt_path.c_str()))
 					out << SET_GRAY "Terminal can look more sleek if you have Windows Terminal installed.\n"
-									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR << endline;
+									"Download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") "> and run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ")." RESET_COLOR
+						<< endline;
 				else
 					out << SET_GRAY "You can run this exe with " SET_GREEN "-rwt " SET_GRAY "(" SET_GREEN "-g" SET_GRAY "|" SET_GREEN "-gp" SET_GRAY ") for a better experience under Windows Terminal." RESET_COLOR << endline;
 			}
@@ -656,11 +660,11 @@ protected:
 			//通过EnumFontFamiliesEx遍历字体，找到一个以Fira Code开头的字体就不提示了
 			//如果找不到，就提示一下
 			{
-				LOGFONTW lf;//可以掠过0初始化：以下3个必须项目已被正确赋值
-				lf.lfCharSet	 = DEFAULT_CHARSET;
-				lf.lfFaceName[0] = L'\0';
+				LOGFONTW lf;	   //可以掠过0初始化：以下3个必须项目已被正确赋值
+				lf.lfCharSet		= DEFAULT_CHARSET;
+				lf.lfFaceName[0]	= L'\0';
 				lf.lfPitchAndFamily = 0;
-				HDC hdc			 = GetDC(NULL);
+				HDC hdc				= GetDC(NULL);
 				if(hdc) {
 					EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)FiraCode_Finder, (LPARAM)this, 0);
 					ReleaseDC(NULL, hdc);
@@ -668,21 +672,22 @@ protected:
 			}
 			if(!fira_code_font_found)
 				out << SET_GRAY "You can use " SET_GREEN "Fira Code" SET_GRAY " font for a better experience in terminal and editor.\n"
-					   "Try it from <" UNDERLINE_TEXT("https://github.com/tonsky/FiraCode") "> !" RESET_COLOR << endline;
+								"Try it from <" UNDERLINE_TEXT("https://github.com/tonsky/FiraCode") "> !" RESET_COLOR
+					<< endline;
 		}
 		{
 			auto names	= linker.NOTYFY({{L"Event", L"ShioriEcho.GetName"}});
 			auto result = linker.NOTYFY({
-											{L"Event", L"ShioriEcho.Begin"},
-											{L"Reference0", L"" VERSION_STRING},
-											{L"Reference1", [&]{//mode
-												if(!command.empty())
-													return L"Command";
-												if(!sakurascript.empty())
-													return L"SakuraScript";
-												return L"Common";
-											}()},
-										});
+				{L"Event", L"ShioriEcho.Begin"},
+				{L"Reference0", L"" VERSION_STRING},
+				{L"Reference1", [&] {		//mode
+					 if(!command.empty())
+						 return L"Command";
+					 if(!sakurascript.empty())
+						 return L"SakuraScript";
+					 return L"Common";
+				 }()},
+			});
 			{
 				//set console title
 				wstring title = L"Ghost Terminal";
@@ -739,16 +744,24 @@ protected:
 		}
 		if(!disable_root_text && IsElevated())
 			out << SET_GRAY "Coooool, You're running terminal with " BOLD_TEXT(UNDERLINE_TEXT("root") " access") "!\n"
-				   "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
-				   "It will just run as it always does.\n\n" RESET_COLOR;
+																												 "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
+																																																"It will just run as it always does.\n\n" RESET_COLOR;
 		if(linker.Has_Event(L"Has_Event")) {
+			#if defined(_MSC_VER)
+				#pragma warning(push)
+				#pragma warning(disable : 4459)
+				#pragma warning(disable : 6244)
+			#endif
 			auto& err = [&]() -> base_out_t& {
 				if(disable_event_text)
 					return nullstream;
 				return ::err;
 			}();
+			#if defined(_MSC_VER)
+				#pragma warning(pop)
+			#endif
 			err << SET_GRAY;
-			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))//在disable_event_text时完全可以不检查ShioriEcho
+			if(!disable_event_text && !linker.Has_Event(L"ShioriEcho"))		  //在disable_event_text时完全可以不检查ShioriEcho
 				err << "Event " SET_GREEN "ShioriEcho" SET_GRAY " Not defined.\n"
 					   "Your ghost may not be supporting Terminal if it can't handle ShioriEcho event.\n\n";
 			//ShioriEcho.GetResult
@@ -770,13 +783,11 @@ protected:
 			if(!linker.Has_Event(L"ShioriEcho.CommandHistory.New") || !linker.Has_Event(L"ShioriEcho.CommandHistory.Get") ||
 			   !linker.Has_Event(L"ShioriEcho.CommandHistory.Update") || !linker.Has_Event(L"ShioriEcho.CommandHistory.ForwardIndex")) {
 				able_command_history = 0;
-				err << "Your ghost needs to support all of the following events to support command history:\n"
-					   SET_GREEN
+				err << "Your ghost needs to support all of the following events to support command history:\n" SET_GREEN
 					   "ShioriEcho.CommandHistory.New\n"
 					   "ShioriEcho.CommandHistory.Get\n"
 					   "ShioriEcho.CommandHistory.Update\n"
-					   "ShioriEcho.CommandHistory.ForwardIndex\n"
-					   SET_GRAY
+					   "ShioriEcho.CommandHistory.ForwardIndex\n" SET_GRAY
 					   "Terminal will use its default command history function and not send command history events to your ghost.\n\n";
 			}
 			if(!linker.Has_Event(L"ShioriEcho.TabPress")) {
@@ -799,13 +810,15 @@ protected:
 			able_command_prompt	  = 0;
 			able_get_result		  = 0;
 			err << SET_RED "Event " SET_GREEN "Has_Event" SET_RED " Not defined.\n"
-				   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
-				   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " event." RESET_COLOR "\n\n";
+						   "You need to make your ghost support " SET_GREEN "Has_Event" SET_RED " event so that Terminal can know what events it supports.\n"
+						   "Terminal will assume your ghost only supports " SET_GREEN "ShioriEcho" SET_RED " event." RESET_COLOR "\n\n";
 		}
 	}
 	//terminal runnning
 	enum terminal_result_status {
-		Continue, Wait, End
+		Continue,
+		Wait,
+		End
 	};
 	terminal_result_status result_handle(const SSTP_ret_t& Result) {
 		{
@@ -843,8 +856,8 @@ protected:
 	}
 	virtual bool terminal_run(const wstring& command) override {
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho"},
-					   {L"ID", ghost_uid},
-					   {L"Reference0", command}});
+									 {L"ID", ghost_uid},
+									 {L"Reference0", command}});
 		if(able_get_result)
 			floop {
 				auto GetResult = linker.NOTYFY({{L"Event", L"ShioriEcho.GetResult"}});
@@ -929,7 +942,7 @@ protected:
 			//考虑到sstp极慢的速度，只在需要时更新command的色彩
 			const auto next_char = terminal_n::peek_key_input();
 			if(next_char == L'\r' || next_char == L'\n')
-				;//fall through
+				;		//fall through
 			else if(next_char)
 				return command;
 		}
@@ -959,7 +972,7 @@ protected:
 	}
 	virtual bool terminal_command_history_forward(size_t& index, size_t forward_num) override {
 		if(!able_command_history)
-			return simple_terminal::terminal_command_history_forward(index,forward_num);
+			return simple_terminal::terminal_command_history_forward(index, forward_num);
 
 		auto Result = linker.NOTYFY({{L"Event", L"ShioriEcho.CommandHistory.ForwardIndex"},
 									 {L"Reference0", to_wstring(index)},
