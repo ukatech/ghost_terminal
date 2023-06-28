@@ -288,13 +288,14 @@ protected:
 					for(auto& i: fmobj.info_map) {
 						if(i.second[L"fullname"] != ghost_link_to)
 							continue;
-						ghost_path = i.second[L"ghostpath"] + L"ghost\\master\\";
+						ghost_path = i.second[L"ghostpath"];
 						break;
 					}
 					if(ghost_path.empty())
 						err << SET_RED "Can't find ghost path by name: " SET_BLUE << ghost_link_to << RESET_COLOR << endline;
 					else
 						out << SET_GRAY "Get ghost path by name: " SET_CYAN << ghost_path << RESET_COLOR << endline;
+					ghost_path += L"ghost\\master\\";
 				}
 			}
 			//处理ghost_path，获得ghost的name 和 icon
@@ -414,6 +415,7 @@ protected:
 					}
 					DWORD dwWrite;
 					if(!WriteFile(hFile, new_wt_json.data(), new_wt_json.size(), &dwWrite, nullptr)) {
+						CloseHandle(hFile);
 						err << SET_RED "Can't write file: " SET_CYAN << wt_json_path << RESET_COLOR << endline;
 						exit(1);
 					}
@@ -425,7 +427,7 @@ protected:
 			wstring wt_path = LOCALAPPDATA + L"\\Microsoft\\WindowsApps\\wt.exe";
 			if(!PathFileExistsW(wt_path.c_str())) {
 				err << SET_PURPLE "Can't find Windows Terminal(" << wt_path << L")\n"
-																			   "You can download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") ">." RESET_COLOR
+								  "You can download it from <" UNDERLINE_TEXT("https://aka.ms/terminal") ">." RESET_COLOR
 					<< endline;
 			}
 			else {
@@ -681,11 +683,11 @@ protected:
 				{L"Event", L"ShioriEcho.Begin"},
 				{L"Reference0", L"" VERSION_STRING},
 				{L"Reference1", [&] {		//mode
-					 if(!command.empty())
-						 return L"Command";
-					 if(!sakurascript.empty())
-						 return L"SakuraScript";
-					 return L"Common";
+					if(!command.empty())
+						return L"Command";
+					if(!sakurascript.empty())
+						return L"SakuraScript";
+					return L"Common";
 				 }()},
 			});
 			{
@@ -744,8 +746,8 @@ protected:
 		}
 		if(!disable_root_text && IsElevated())
 			out << SET_GRAY "Coooool, You're running terminal with " BOLD_TEXT(UNDERLINE_TEXT("root") " access") "!\n"
-																												 "But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
-																																																"It will just run as it always does.\n\n" RESET_COLOR;
+							"But that won't do any good, terminal won't have any new " BLINK_TEXT("super") " cow power.\n"
+							"It will just run as it always does.\n\n" RESET_COLOR;
 		if(linker.Has_Event(L"Has_Event")) {
 			#if defined(_MSC_VER)
 				#pragma warning(push)
