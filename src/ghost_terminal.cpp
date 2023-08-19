@@ -509,8 +509,7 @@ protected:
 			fmobj.Update_info();
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map.size() > 0;
-			},
-				   L"FMO initialized");
+			},L"FMO initialized");
 			if(!ghost_link_to.empty())
 				waiter([&] {
 					if(fmobj.Update_info())
@@ -520,8 +519,7 @@ protected:
 								return ghost_hwnd = tmp_hwnd;
 						}
 					return HWND{0};
-				},
-					   L"ghost hwnd created");
+				},L"ghost hwnd created");
 		};
 		if(ghost_hwnd)
 			goto link_to_ghost;
@@ -644,8 +642,7 @@ protected:
 		if(sakurascript.empty())	   //发送ss不需要shiori就绪
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
-			},
-				   L"ghost's shiori ready");
+			},L"ghost's shiori ready");
 
 		if(!disable_WindowsTerminal_text && !InWindowsTerminal()) {
 			if(!register2wt) {
