@@ -64,7 +64,9 @@ private:
 		HWND	ghost_hwnd = NULL;
 		wstring command;
 		wstring sakurascript;
-		bool	register2wt = 0;
+		bool	has_command		 = 0;
+		bool	has_sakurascript = 0;
+		bool	register2wt		 = 0;
 
 		bool disable_root_text			  = 0;
 		bool disable_event_text			  = 0;
@@ -140,13 +142,15 @@ protected:
 		//const auto& fira_code_font_found = data_until_login.fira_code_font_found;
 		const auto& LOCALAPPDATA = data_until_login.LOCALAPPDATA;
 
-		auto& ghost_path	= args_info.ghost_path;
-		auto& run_ghost		= args_info.run_ghost;
-		auto& ghost_link_to = args_info.ghost_link_to;
-		auto& ghost_hwnd	= args_info.ghost_hwnd;
-		auto& command		= args_info.command;
-		auto& sakurascript	= args_info.sakurascript;
-		auto& register2wt	= args_info.register2wt;
+		auto& ghost_path	   = args_info.ghost_path;
+		auto& run_ghost		   = args_info.run_ghost;
+		auto& ghost_link_to	   = args_info.ghost_link_to;
+		auto& ghost_hwnd	   = args_info.ghost_hwnd;
+		auto& command		   = args_info.command;
+		auto& sakurascript	   = args_info.sakurascript;
+		auto& register2wt	   = args_info.register2wt;
+		auto& has_command	   = args_info.has_command;
+		auto& has_sakurascript = args_info.has_sakurascript;
 		//disables
 		auto& disable_root_text			   = args_info.disable_root_text;
 		auto& disable_event_text		   = args_info.disable_event_text;
@@ -160,6 +164,7 @@ protected:
 			while(i < argc) {
 				if(argv[i] == L"-c" || argv[i] == L"--command") {		//command
 					i++;
+					has_command = 1;
 					if(i < argc)
 						command = argv[i];
 					else {
@@ -169,6 +174,7 @@ protected:
 				}
 				else if(argv[i] == L"-s" || argv[i] == L"--sakura-script") {	   //sakura script
 					i++;
+					has_sakurascript = 1;
 					if(i < argc)
 						sakurascript = argv[i];
 					else {
@@ -448,13 +454,15 @@ protected:
 		//make destroy_flag as data is no longer needed after this function
 		auto destroy_flag = data_until_login_saver.make_destroy_flag();
 
-		auto&		ghost_link_to = args_info.ghost_link_to;
-		auto&		ghost_path	  = args_info.ghost_path;
-		const auto& run_ghost	  = args_info.run_ghost;
-		auto&		ghost_hwnd	  = args_info.ghost_hwnd;
-		const auto& command		  = args_info.command;
-		const auto& sakurascript  = args_info.sakurascript;
-		const auto& register2wt	  = args_info.register2wt;
+		auto&		ghost_link_to	 = args_info.ghost_link_to;
+		auto&		ghost_path		 = args_info.ghost_path;
+		const auto& run_ghost		 = args_info.run_ghost;
+		auto&		ghost_hwnd		 = args_info.ghost_hwnd;
+		const auto& register2wt		 = args_info.register2wt;
+		const auto& command			 = args_info.command;
+		const auto& sakurascript	 = args_info.sakurascript;
+		const auto& has_command		 = args_info.has_command;
+		const auto& has_sakurascript = args_info.has_sakurascript;
 		//disables
 		const auto& disable_root_text			 = args_info.disable_root_text;
 		const auto& disable_event_text			 = args_info.disable_event_text;
@@ -527,9 +535,10 @@ protected:
 			{
 				const auto ghostnum = fmobj.info_map.size();
 				if(ghostnum == 0) {
-					err << RED_TEXT("None of ghost was running.") << endline;
-					if(!run_ghost)
+					if(!run_ghost) {
+						err << RED_TEXT("None of ghost was running.") << endline;
 						exit(1);
+					}
 					start_ghost();
 				}
 				else if(!ghost_link_to.empty()) {
@@ -633,13 +642,14 @@ protected:
 			linker.link_to_ghost(ghost_hwnd);
 		}
 		else {
-			err << RED_TEXT("Can\'t read FMO info.") << endline;
-			if(!run_ghost)
+			if(!run_ghost) {
+				err << RED_TEXT("Can\'t read FMO info.") << endline;
 				exit(1);
+			}
 			start_ghost();
 			goto link_to_ghost;
 		}
-		if(sakurascript.empty())	   //发送ss不需要shiori就绪
+		if(!has_sakurascript)	   //发送ss不需要shiori就绪
 			waiter([&] {
 				return fmobj.Update_info() && fmobj.info_map[ghost_uid].get_modulestate(L"shiori") == L"running";
 			},L"ghost's shiori ready");
@@ -680,9 +690,9 @@ protected:
 				{L"Event", L"ShioriEcho.Begin"},
 				{L"Reference0", L"" VERSION_STRING},
 				{L"Reference1", [&] {		//mode
-					if(!command.empty())
+					if(has_command)
 						return L"Command";
-					if(!sakurascript.empty())
+					if(has_sakurascript)
 						return L"SakuraScript";
 					return L"Common";
 				 }()},
@@ -717,9 +727,11 @@ protected:
 				SetConsoleIcon(icon_info);
 			}
 
-			if(result.has(L"CustomLoginInfo"))
-				out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
-			else {
+			if(result.has(L"CustomLoginInfo")) {
+				if(result[L"CustomLoginInfo"].size())
+					out << LIGHT_YELLOW_OUTPUT(do_transfer(result[L"CustomLoginInfo"])) << '\n';
+			}
+			else if(!(has_command || has_sakurascript)) {
 				out << CYAN_TEXT("terminal login\n");
 				if(names.has(L"GhostName"))
 					out << "Ghost: " << LIGHT_YELLOW_OUTPUT(names[L"GhostName"]) << '\n';
@@ -729,11 +741,11 @@ protected:
 		}
 
 		bool need_end = 0;
-		if(!command.empty()) {
+		if(has_command) {
 			terminal_run(command);
 			need_end = 1;
 		}
-		if(!sakurascript.empty()) {
+		if(has_sakurascript) {
 			linker.SEND({{L"ID", ghost_uid}, {L"Script", sakurascript}});
 			need_end = 1;
 		}
